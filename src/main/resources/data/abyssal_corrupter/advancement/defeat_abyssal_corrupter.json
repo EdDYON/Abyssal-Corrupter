@@ -1,0 +1,30 @@
+{
+  "display": {
+    "icon": {
+      "id": "abyssal_corrupter:abyssal_corrupter_spawn_egg"
+    },
+    "title": {
+      "translate": "advancement.abyssal_corrupter.defeat_abyssal_corrupter.title"
+    },
+    "description": {
+      "translate": "advancement.abyssal_corrupter.defeat_abyssal_corrupter.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "defeat_abyssal_corrupter": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "abyssal_corrupter:abyssal_corrupter"
+        }
+      }
+    }
+  },
+  "rewards": {
+    "experience": 250
+  }
+}

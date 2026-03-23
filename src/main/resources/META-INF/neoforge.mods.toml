@@ -1,0 +1,31 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+
+[[mods]]
+modId="abyssal_corrupter"
+version="1.0.0"
+displayName="Abyssal Corrupter"
+authors="EdDYON"
+description="嘘！别出声，前面就是深渊侵蚀者！"
+
+[[dependencies.abyssal_corrupter]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.65,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.abyssal_corrupter]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1, 1.22)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.abyssal_corrupter]]
+modId="geckolib"
+type="required"
+versionRange="[4,)"
+ordering="NONE"
+side="BOTH"

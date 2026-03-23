@@ -1,0 +1,37 @@
+{
+  "entity.abyssal_corrupter.abyssal_corrupter": "深渊侵蚀者",
+  "item.abyssal_corrupter.abyssal_corrupter_spawn_egg": "深渊侵蚀者之卵",
+
+  "advancement.abyssal_corrupter.defeat_abyssal_corrupter.title": "深渊止息",
+  "advancement.abyssal_corrupter.defeat_abyssal_corrupter.description": "击败深渊侵蚀者。",
+
+  "chat.abyssal_corrupter.skill.basic.1": "<深渊侵蚀者> 让深渊一点一点啃穿你。",
+  "chat.abyssal_corrupter.skill.basic.2": "<深渊侵蚀者> 你的每一次挣扎，都会喂饱感染。",
+  "chat.abyssal_corrupter.skill.basic.3": "<深渊侵蚀者> 太慢了。腐坏早已在你体内扎根。",
+  "chat.abyssal_corrupter.skill.basic.4": "<深渊侵蚀者> 跪下吧，我会侵蚀掉你最后的抵抗。",
+
+  "chat.abyssal_corrupter.skill.echo_pulse.1": "<深渊侵蚀者> 领域展开，森罗幽域，回声脉动。你发出的每一点声音，都会出卖你。",
+  "chat.abyssal_corrupter.skill.echo_pulse.2": "<深渊侵蚀者> 藏好脚步吧。红色回响已经先一步听见了你的恐惧。",
+  "chat.abyssal_corrupter.skill.echo_pulse.3": "<深渊侵蚀者> 潜行、屏息、祈祷……这片死域依旧听得见活物。",
+
+  "chat.abyssal_corrupter.skill.mirage.1": "<深渊侵蚀者> 你尽管去数那些假身。选错的那一刻，尖啸就会开始。",
+  "chat.abyssal_corrupter.skill.mirage.2": "<深渊侵蚀者> 漏掉真身，所有影子都会一同回应你。",
+  "chat.abyssal_corrupter.skill.mirage.3": "<深渊侵蚀者> 三次心跳。找到我，否则就淹死在音爆里。",
+
+  "chat.abyssal_corrupter.skill.armory.1": "<深渊侵蚀者> 深渊军械展开。我会把你钉死在战场中央。",
+  "chat.abyssal_corrupter.skill.armory.2": "<深渊侵蚀者> 看着吧，深渊会亲自打开它的军械库。",
+  "chat.abyssal_corrupter.skill.armory.3": "<深渊侵蚀者> 没有掩体，没有喘息，只有处刑。",
+
+  "chat.abyssal_corrupter.skill.coral.1": "<深渊侵蚀者> 终焉尖啸。去找那一道夹缝里的生路吧。",
+  "chat.abyssal_corrupter.skill.coral.2": "<深渊侵蚀者> 听见我胸腔里的脉动了吗？那就是你的预警。",
+  "chat.abyssal_corrupter.skill.coral.3": "<深渊侵蚀者> 当尖啸绽开的瞬间，最先死去的是犹豫。",
+
+  "chat.abyssal_corrupter.skill.trench.1": "<深渊侵蚀者> 共鸣奇点。靠近些，然后被彻底抹去。",
+  "chat.abyssal_corrupter.skill.trench.2": "<深渊侵蚀者> 连你的箭矢，也得向我的心脏屈膝。",
+  "chat.abyssal_corrupter.skill.trench.3": "<深渊侵蚀者> 尽管挣扎吧。引力本就效忠于深渊。",
+
+  "chat.abyssal_corrupter.skill.phase_transition.1": "<深渊侵蚀者> 你所触及的，不过是深处腐烂表皮的一角。",
+  "chat.abyssal_corrupter.skill.phase_transition.2": "<深渊侵蚀者> 很好。愤怒会让侵蚀更深。",
+  "chat.abyssal_corrupter.skill.phase_transition.3": "<深渊侵蚀者> 封印正在裂开，深渊正借我降临。",
+  "chat.abyssal_corrupter.skill.phase_transition.4": "<深渊侵蚀者> 现在，你终于看见会吞噬世界的那一面了。"
+}

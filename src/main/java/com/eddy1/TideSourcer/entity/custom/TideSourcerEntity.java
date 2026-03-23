@@ -1,0 +1,770 @@
+package com.eddy1.tidesourcer.entity.custom;
+
+import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
+import com.eddy1.tidesourcer.entity.ai.SunkenTitanCombatGoal;
+import com.eddy1.tidesourcer.entity.ai.SunkenTitanCombatManager;
+import com.eddy1.tidesourcer.entity.ai.SunkenTitanSpeechManager;
+import com.eddy1.tidesourcer.entity.ai.module.epic.EchoingPulseDomain;
+import com.eddy1.tidesourcer.entity.ai.module.terrain.AbyssalTrench;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerBossEvent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.util.GeckoLibUtil;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.WeakHashMap;
+
+public class TideSourcerEntity extends Monster implements GeoEntity {
+    public static final int FOLLOW_UP_NONE = 0;
+    public static final int FOLLOW_UP_CLOSE = 1;
+    public static final int FOLLOW_UP_CHASE = 2;
+    public static final int FOLLOW_UP_RANGED = 3;
+    public static final int FOLLOW_UP_EXECUTE = 4;
+
+    private static final Set<TideSourcerEntity> ACTIVE_INSTANCES = Collections.newSetFromMap(new WeakHashMap<>());
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    public final ServerBossEvent bossEvent = (ServerBossEvent) new ServerBossEvent(
+            Component.translatable("entity.abyssal_corrupter.abyssal_corrupter"),
+            BossEvent.BossBarColor.BLUE,
+            BossEvent.BossBarOverlay.NOTCHED_6
+    ).setDarkenScreen(true);
+
+    public int attackState = 0;
+    public int attackVariant = 1;
+    public int attackTick = 0;
+
+    public int cdGlobalEpic = 200;
+
+    public int cdSlash = 0;
+    public int cdCombo = 0;
+    public int cdWave = 0;
+
+    public int cdLeap = 0;
+    public int cdEruption = 0;
+    public int cdSkyfall = 0;
+
+    public int cdVortex = 0;
+    public int cdRepulsion = 0;
+    public int cdPrison = 0;
+
+    public int cdHook = 0;
+    public int cdBreath = 0;
+    public int cdRay = 0;
+
+    public int cdDash = 0;
+    public int cdTaunt = 0;
+
+    public int cdDomain = 0;
+    public int cdMirage = 0;
+    public int cdArmory = 0;
+    public int cdNova = 0;
+    public int cdSingularity = 0;
+
+    public double geyserX;
+    public double geyserY;
+    public double geyserZ;
+
+    public Map<BlockPos, BlockState> savedEchoDomainBlocks = new HashMap<>();
+
+    public boolean isClone = false;
+    public TideSourcerEntity mainBoss = null;
+    public boolean mirageFailed = false;
+    public boolean mirageSuccess = false;
+    public boolean mirageFinalShotFired = false;
+    public List<TideSourcerEntity> activeClones = new ArrayList<>();
+
+    public int armoryActiveTick = 0;
+    public List<AbstractArrow> activeArmoryWeapons = new ArrayList<>();
+
+    public int echoDomainActiveTick = 0;
+    public int echoDomainConfusionTick = 0;
+    public Vec3 echoDomainCenter = null;
+
+    public int singularityActiveTick = 0;
+    public Vec3 singularityPos = null;
+
+    public double coralBaseAngle = 0.0D;
+    public Map<UUID, Integer> coralHitTicks = new HashMap<>();
+    public boolean manualTestMode = false;
+
+    public UUID trackedTargetId = null;
+    public double trackedTargetDistanceSqr = -1.0D;
+    public int targetRetreatTicks = 0;
+    public int targetApproachTicks = 0;
+    public int targetStrafeTicks = 0;
+    public int targetStraightRunTicks = 0;
+    public int targetCloseTicks = 0;
+    public int targetFarTicks = 0;
+    public int targetNoSightTicks = 0;
+    public int targetAirTicks = 0;
+
+    public int followUpIntent = FOLLOW_UP_NONE;
+    public int followUpTicks = 0;
+    public int lastAttackStateUsed = 0;
+    public int lastAttackVariantUsed = 0;
+    public int repeatedAttackCount = 0;
+
+    public boolean phase90 = false;
+    public boolean phase80 = false;
+    public boolean phase70 = false;
+    public boolean phase60 = false;
+    public int pendingPhaseEpic = 0;
+
+    public TideSourcerEntity(EntityType<? extends Monster> entityType, Level level) {
+        super(entityType, level);
+        ACTIVE_INSTANCES.add(this);
+        this.cdDash = 20;
+        this.cdRay = 60;
+        this.cdSkyfall = 80;
+        this.cdMirage = 100;
+        this.cdArmory = 160;
+        this.cdNova = 120;
+        this.cdSingularity = 140;
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return Monster.createMonsterAttributes()
+                .add(Attributes.MAX_HEALTH, 1800.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.30D)
+                .add(Attributes.ATTACK_DAMAGE, 32.0D)
+                .add(Attributes.ATTACK_KNOCKBACK, 3.0D)
+                .add(Attributes.FOLLOW_RANGE, 80.0D)
+                .add(Attributes.ARMOR, 14.0D)
+                .add(Attributes.ARMOR_TOUGHNESS, 8.0D)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
+    }
+
+    public static List<TideSourcerEntity> getActiveInstances(Level level) {
+        List<TideSourcerEntity> matches = new ArrayList<>();
+        for (TideSourcerEntity entity : ACTIVE_INSTANCES) {
+            if (entity == null || entity.level() != level || entity.isRemoved()) {
+                continue;
+            }
+            matches.add(entity);
+        }
+        return matches;
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag compound) {
+        super.addAdditionalSaveData(compound);
+        compound.putBoolean("IsClone", this.isClone);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag compound) {
+        super.readAdditionalSaveData(compound);
+        this.isClone = compound.getBoolean("IsClone");
+    }
+
+    @Override
+    protected void registerGoals() {
+        if (!this.isClone) {
+            this.goalSelector.addGoal(0, new FloatGoal(this));
+            this.goalSelector.addGoal(1, new SunkenTitanCombatGoal(this));
+            this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+            this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
+            this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
+            this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+            this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, LivingEntity.class, true));
+        }
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (this.level().isClientSide()) {
+            return;
+        }
+
+        if (!this.isClone && this.hasTemporaryEncounterState() && this.isEncounterTargetInvalid()) {
+            this.interruptEncounter();
+        }
+
+        if (this.isClone) {
+            if (this.mainBoss == null || !this.mainBoss.isAlive() || this.mainBoss.attackState != 7) {
+                this.discard();
+                return;
+            }
+            if (this.tickCount % 3 == 0) {
+                AbyssalEffects.spawnInfectionCloud((ServerLevel) this.level(), this.position().add(0.0D, 1.0D, 0.0D), 0.12D, 0.25D);
+            }
+            return;
+        }
+
+        if (this.echoDomainConfusionTick > 0) {
+            this.echoDomainConfusionTick--;
+        }
+
+        if (this.echoDomainActiveTick > 0) {
+            this.echoDomainActiveTick--;
+            if (this.level() instanceof ServerLevel sl) {
+                EchoingPulseDomain.tickActiveDomain(this, sl);
+            }
+        }
+
+        if (this.singularityActiveTick > 0) {
+            this.singularityActiveTick--;
+            if (this.level() instanceof ServerLevel sl) {
+                AbyssalTrench.tickActiveTrench(this, sl);
+            }
+        }
+
+        if (this.attackState == 100) {
+            this.attackTick++;
+            if (this.attackTick == 1) {
+                SunkenTitanSpeechManager.announceSkill(this, 100, 1);
+                this.playSound(SoundEvents.WITHER_DEATH, 3.0F, 0.5F);
+                this.playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 5.0F, 0.5F);
+                this.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 60, 0, false, false, false));
+                this.setDeltaMovement(0.0D, 0.0D, 0.0D);
+            }
+            if (this.level() instanceof ServerLevel sl) {
+                Vec3 pos = this.position().add(0.0D, 1.0D, 0.0D);
+                AbyssalEffects.spawnCharge(sl, pos, 2.0D, 2.0D);
+                AbyssalEffects.spawnInfectionCloud(sl, pos, 2.0D, 2.0D);
+            }
+            if (this.attackTick >= 60) {
+                this.removeEffect(MobEffects.LEVITATION);
+                int nextEpic = this.pendingPhaseEpic;
+                this.attackState = 0;
+                this.attackTick = 0;
+                this.pendingPhaseEpic = 0;
+                if (nextEpic != 0) {
+                    this.startEpicAttack(nextEpic);
+                }
+            }
+            return;
+        }
+
+        if (this.armoryActiveTick > 0) {
+            this.armoryActiveTick--;
+            if (this.armoryActiveTick == 0) {
+                for (AbstractArrow weapon : this.activeArmoryWeapons) {
+                    if (weapon != null && weapon.isAlive()) {
+                        if (this.level() instanceof ServerLevel sl) {
+                            AbyssalEffects.spawnImpact(sl, weapon.position(), 0.3D, 0.3D);
+                        }
+                        weapon.discard();
+                    }
+                }
+                this.activeArmoryWeapons.clear();
+            }
+        }
+
+        SunkenTitanCombatManager.handleCooldowns(this);
+        if (this.attackState != 0 && this.attackState != 100) {
+            this.attackTick++;
+            SunkenTitanCombatManager.handleAttacks(this);
+        }
+    }
+
+    public void forceRestoreBlocks() {
+        if (this.level() instanceof ServerLevel sl) {
+            for (Map.Entry<BlockPos, BlockState> entry : this.savedEchoDomainBlocks.entrySet()) {
+                sl.setBlock(entry.getKey(), entry.getValue(), 3);
+            }
+            this.savedEchoDomainBlocks.clear();
+        }
+    }
+
+    public boolean hasPersistentEpicActive() {
+        return this.echoDomainActiveTick > 0
+                || this.singularityActiveTick > 0
+                || this.armoryActiveTick > 0;
+    }
+
+    public boolean hasTemporaryEncounterState() {
+        return (this.attackState >= 6 && this.attackState <= 10)
+                || this.echoDomainActiveTick > 0
+                || this.singularityActiveTick > 0
+                || this.armoryActiveTick > 0
+                || !this.savedEchoDomainBlocks.isEmpty()
+                || !this.activeClones.isEmpty()
+                || !this.activeArmoryWeapons.isEmpty()
+                || this.isInvisible();
+    }
+
+    public boolean isTrackingTarget(LivingEntity target) {
+        return target != null && this.getTarget() == target;
+    }
+
+    public void interruptEncounter() {
+        this.cleanupMirageClones();
+        this.cleanupArmoryWeapons();
+        this.forceRestoreBlocks();
+        this.echoDomainActiveTick = 0;
+        this.echoDomainConfusionTick = 0;
+        this.echoDomainCenter = null;
+        this.singularityActiveTick = 0;
+        this.singularityPos = null;
+        this.armoryActiveTick = 0;
+        this.mirageFailed = false;
+        this.mirageSuccess = false;
+        this.mirageFinalShotFired = false;
+        this.coralBaseAngle = 0.0D;
+        this.coralHitTicks.clear();
+        this.resetCombatMemory();
+        this.setInvisible(false);
+        this.attackState = 0;
+        this.attackTick = 0;
+        this.getNavigation().stop();
+    }
+
+    public void cleanupMirageClones() {
+        for (TideSourcerEntity clone : this.activeClones) {
+            if (clone != null && clone.isAlive()) {
+                clone.discard();
+            }
+        }
+        this.activeClones.clear();
+        this.mirageFinalShotFired = false;
+    }
+
+    public void cleanupArmoryWeapons() {
+        if (this.level() instanceof ServerLevel sl) {
+            for (AbstractArrow weapon : this.activeArmoryWeapons) {
+                if (weapon != null && weapon.isAlive()) {
+                    AbyssalEffects.spawnImpact(sl, weapon.position(), 0.3D, 0.3D);
+                    weapon.discard();
+                }
+            }
+        } else {
+            for (AbstractArrow weapon : this.activeArmoryWeapons) {
+                if (weapon != null && weapon.isAlive()) {
+                    weapon.discard();
+                }
+            }
+        }
+        this.activeArmoryWeapons.clear();
+    }
+
+    public void clearCombatCooldowns() {
+        this.cdGlobalEpic = 0;
+        this.cdSlash = 0;
+        this.cdCombo = 0;
+        this.cdWave = 0;
+        this.cdLeap = 0;
+        this.cdEruption = 0;
+        this.cdSkyfall = 0;
+        this.cdVortex = 0;
+        this.cdRepulsion = 0;
+        this.cdPrison = 0;
+        this.cdHook = 0;
+        this.cdBreath = 0;
+        this.cdRay = 0;
+        this.cdDash = 0;
+        this.cdTaunt = 0;
+        this.cdDomain = 0;
+        this.cdMirage = 0;
+        this.cdArmory = 0;
+        this.cdNova = 0;
+        this.cdSingularity = 0;
+        this.pendingPhaseEpic = 0;
+        this.resetCombatMemory();
+    }
+
+    public void enableManualTestMode() {
+        this.manualTestMode = true;
+    }
+
+    public void disableManualTestMode() {
+        this.manualTestMode = false;
+    }
+
+    public boolean isManualTestMode() {
+        return this.manualTestMode;
+    }
+
+    public void updateCombatMemory(LivingEntity target) {
+        if (this.followUpTicks > 0) {
+            this.followUpTicks--;
+            if (this.followUpTicks == 0) {
+                this.followUpIntent = FOLLOW_UP_NONE;
+            }
+        }
+
+        if (target == null || !target.isAlive() || target.level() != this.level()) {
+            this.resetCombatMemory();
+            return;
+        }
+
+        UUID targetId = target.getUUID();
+        if (!targetId.equals(this.trackedTargetId)) {
+            this.resetCombatMemory();
+            this.trackedTargetId = targetId;
+        }
+
+        double distSqr = this.distanceToSqr(target);
+        Vec3 toTarget = target.position().subtract(this.position());
+        Vec3 horizontalToTarget = new Vec3(toTarget.x, 0.0D, toTarget.z);
+        Vec3 targetVelocity = target.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D);
+
+        double radialDot = 0.0D;
+        double strafeDot = 0.0D;
+        if (horizontalToTarget.lengthSqr() > 1.0E-4D && targetVelocity.lengthSqr() > 1.0E-4D) {
+            Vec3 radial = horizontalToTarget.normalize();
+            Vec3 tangent = new Vec3(-radial.z, 0.0D, radial.x);
+            Vec3 movementDir = targetVelocity.normalize();
+            radialDot = movementDir.dot(radial);
+            strafeDot = Math.abs(movementDir.dot(tangent));
+        }
+
+        this.targetRetreatTicks = updateCombatCounter(this.targetRetreatTicks, radialDot > 0.35D && distSqr > 36.0D, 3, 2, 60);
+        this.targetApproachTicks = updateCombatCounter(this.targetApproachTicks, radialDot < -0.30D, 3, 2, 60);
+        this.targetStrafeTicks = updateCombatCounter(this.targetStrafeTicks, strafeDot > 0.55D, 2, 1, 60);
+        this.targetStraightRunTicks = updateCombatCounter(this.targetStraightRunTicks, radialDot > 0.75D && strafeDot < 0.35D, 3, 2, 60);
+        this.targetCloseTicks = updateCombatCounter(this.targetCloseTicks, distSqr <= 36.0D, 2, 3, 60);
+        this.targetFarTicks = updateCombatCounter(this.targetFarTicks, distSqr >= 225.0D, 2, 2, 60);
+        this.targetNoSightTicks = updateCombatCounter(this.targetNoSightTicks, !this.hasLineOfSight(target), 2, 2, 60);
+        this.targetAirTicks = updateCombatCounter(this.targetAirTicks, !target.onGround(), 2, 2, 40);
+        this.trackedTargetDistanceSqr = distSqr;
+    }
+
+    public void resetCombatMemory() {
+        this.trackedTargetId = null;
+        this.trackedTargetDistanceSqr = -1.0D;
+        this.targetRetreatTicks = 0;
+        this.targetApproachTicks = 0;
+        this.targetStrafeTicks = 0;
+        this.targetStraightRunTicks = 0;
+        this.targetCloseTicks = 0;
+        this.targetFarTicks = 0;
+        this.targetNoSightTicks = 0;
+        this.targetAirTicks = 0;
+        this.followUpIntent = FOLLOW_UP_NONE;
+        this.followUpTicks = 0;
+        this.lastAttackStateUsed = 0;
+        this.lastAttackVariantUsed = 0;
+        this.repeatedAttackCount = 0;
+    }
+
+    public void setFollowUpIntent(int intent, int ticks) {
+        this.followUpIntent = intent;
+        this.followUpTicks = ticks;
+    }
+
+    @Override
+    public boolean shouldBeSaved() {
+        return !this.isClone && super.shouldBeSaved();
+    }
+
+    @Override
+    public void die(DamageSource damageSource) {
+        if (!this.level().isClientSide()) {
+            this.triggerAnim("attack_controller", "death");
+        }
+        this.interruptEncounter();
+        super.die(damageSource);
+    }
+
+    @Override
+    protected void tickDeath() {
+        if (!this.level().isClientSide() && !this.isClone && this.level() instanceof ServerLevel sl) {
+            this.spawnAbyssalDeathEffect(sl);
+        }
+        super.tickDeath();
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        ACTIVE_INSTANCES.remove(this);
+        this.interruptEncounter();
+        super.remove(reason);
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (this.attackState == 100) {
+            return false;
+        }
+        if (source.is(DamageTypeTags.IS_FIRE) || source.is(DamageTypes.FALL) || source.is(DamageTypes.IN_WALL)) {
+            return false;
+        }
+        if (this.isClone) {
+            if (this.mainBoss != null && this.mainBoss.isAlive()) {
+                this.mainBoss.mirageFailed = true;
+            }
+            if (this.level() instanceof ServerLevel sl) {
+                AbyssalEffects.spawnImpact(sl, this.position().add(0.0D, 1.0D, 0.0D), 0.5D, 0.5D);
+            }
+            return true;
+        }
+        if (this.attackState == 7
+                && !this.mirageFailed
+                && !this.mirageSuccess
+                && this.attackTick < com.eddy1.tidesourcer.entity.ai.module.epic.MirageExecution.IDENTIFY_TICKS) {
+            this.mirageSuccess = true;
+        }
+        return super.hurt(source, amount);
+    }
+
+    @Override
+    public void jumpFromGround() {
+        super.jumpFromGround();
+        Vec3 vec = this.getDeltaMovement();
+        this.setDeltaMovement(vec.x, vec.y + 0.2D, vec.z);
+    }
+
+    @Override
+    public void startSeenByPlayer(ServerPlayer player) {
+        super.startSeenByPlayer(player);
+        if (!this.isClone) {
+            this.bossEvent.addPlayer(player);
+        }
+    }
+
+    @Override
+    public void stopSeenByPlayer(ServerPlayer player) {
+        super.stopSeenByPlayer(player);
+        if (!this.isClone) {
+            this.bossEvent.removePlayer(player);
+        }
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        if (!this.isClone) {
+            this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
+        }
+    }
+
+    public void startAttack(int state, int variant) {
+        if (state != 100) {
+            if (this.lastAttackStateUsed == state && this.lastAttackVariantUsed == variant) {
+                this.repeatedAttackCount = Math.min(this.repeatedAttackCount + 1, 3);
+            } else {
+                this.repeatedAttackCount = 0;
+            }
+            this.lastAttackStateUsed = state;
+            this.lastAttackVariantUsed = variant;
+        }
+        this.attackState = state;
+        this.attackVariant = variant;
+        this.attackTick = 0;
+
+        SunkenTitanSpeechManager.announceSkill(this, state, variant);
+        this.triggerAttackAnimation(state, variant);
+    }
+
+    public void startEpicAttack(int state) {
+        this.startAttack(state, 1);
+        this.cdGlobalEpic = 420;
+        switch (state) {
+            case 6 -> this.cdDomain = 1450;
+            case 7 -> this.cdMirage = 980;
+            case 8 -> this.cdArmory = 1120;
+            case 9 -> this.cdNova = 820;
+            case 10 -> this.cdSingularity = 960;
+            default -> {
+            }
+        }
+    }
+
+    public void resetAttack() {
+        if (this.manualTestMode) {
+            this.attackState = 0;
+            this.attackTick = 0;
+            return;
+        }
+        this.applyFollowUpFromFinishedAttack(this.attackState, this.attackVariant);
+        this.attackState = 0;
+        this.attackTick = 0;
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "controller", 5, state -> {
+            if (this.isDeadOrDying()) {
+                return PlayState.STOP;
+            }
+            if (this.attackState != 0 && this.attackState != 5 && this.attackState != 100) {
+                return PlayState.STOP;
+            }
+            if (state.isMoving()) {
+                return state.setAndContinue(RawAnimation.begin().thenLoop("walk"));
+            }
+            return state.setAndContinue(RawAnimation.begin().thenLoop("idle"));
+        }));
+
+        controllers.add(new AnimationController<>(this, "attack_controller", 0, state -> PlayState.STOP)
+                .triggerableAnim("attack", RawAnimation.begin().thenPlay("attack"))
+                .triggerableAnim("attack2", RawAnimation.begin().thenPlay("attack2"))
+                .triggerableAnim("attack3", RawAnimation.begin().thenPlay("attack3"))
+                .triggerableAnim("attack4", RawAnimation.begin().thenPlay("attack4"))
+                .triggerableAnim("attack5", RawAnimation.begin().thenPlay("attack5"))
+                .triggerableAnim("attack6", RawAnimation.begin().thenPlay("attack6"))
+                .triggerableAnim("attack7", RawAnimation.begin().thenPlay("attack7"))
+                .triggerableAnim("death", RawAnimation.begin().thenPlay("death")));
+    }
+
+    private void triggerAttackAnimation(int state, int variant) {
+        switch (state) {
+            case 1 -> this.triggerAnim("attack_controller", "attack");
+            case 2, 5 -> this.triggerAnim("attack_controller", "attack2");
+            case 3 -> {
+                if (variant == 1 || variant == 2) {
+                    this.triggerAnim("attack_controller", "attack3");
+                } else {
+                    this.triggerAnim("attack_controller", "attack6");
+                }
+            }
+            case 4 -> {
+                if (variant == 1) {
+                    this.triggerAnim("attack_controller", "attack4");
+                } else {
+                    this.triggerAnim("attack_controller", "attack5");
+                }
+            }
+            case 6 -> this.triggerAnim("attack_controller", "attack6");
+            case 7, 11 -> this.triggerAnim("attack_controller", "attack7");
+            case 8, 10 -> this.triggerAnim("attack_controller", "attack6");
+            case 9 -> this.triggerAnim("attack_controller", "attack5");
+            default -> {
+            }
+        }
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return this.cache;
+    }
+
+    private boolean isEncounterTargetInvalid() {
+        LivingEntity target = this.getTarget();
+        return target == null || !target.isAlive() || target.isRemoved() || target.level() != this.level();
+    }
+
+    private static int updateCombatCounter(int current, boolean active, int gain, int decay, int cap) {
+        if (active) {
+            return Math.min(cap, current + gain);
+        }
+        return Math.max(0, current - decay);
+    }
+
+    private void applyFollowUpFromFinishedAttack(int state, int variant) {
+        switch (state) {
+            case 2 -> {
+                if (variant == 1) {
+                    this.setFollowUpIntent(FOLLOW_UP_CLOSE, 20);
+                } else {
+                    this.setFollowUpIntent(FOLLOW_UP_RANGED, 24);
+                }
+            }
+            case 3 -> {
+                if (variant == 1) {
+                    this.setFollowUpIntent(FOLLOW_UP_CLOSE, 28);
+                } else if (variant == 2) {
+                    this.setFollowUpIntent(FOLLOW_UP_RANGED, 26);
+                } else {
+                    this.setFollowUpIntent(FOLLOW_UP_EXECUTE, 24);
+                }
+            }
+            case 4 -> {
+                if (variant == 1) {
+                    this.setFollowUpIntent(FOLLOW_UP_EXECUTE, 30);
+                } else if (variant == 2) {
+                    this.setFollowUpIntent(FOLLOW_UP_CHASE, 20);
+                } else {
+                    this.setFollowUpIntent(FOLLOW_UP_CHASE, 16);
+                }
+            }
+            case 5 -> this.setFollowUpIntent(FOLLOW_UP_CLOSE, 24);
+            case 11 -> this.setFollowUpIntent(FOLLOW_UP_RANGED, 22);
+            default -> {
+                if (this.followUpTicks < 6) {
+                    this.setFollowUpIntent(FOLLOW_UP_NONE, 0);
+                }
+            }
+        }
+    }
+
+    private void spawnAbyssalDeathEffect(ServerLevel sl) {
+        Vec3 center = this.position().add(0.0D, this.getBbHeight() * 0.58D, 0.0D);
+        double width = this.getBbWidth() * 0.75D;
+
+        if (this.deathTime == 1) {
+            this.playSound(SoundEvents.WARDEN_HEARTBEAT, 2.8F, 0.58F);
+            this.playSound(SoundEvents.ENDERMAN_SCREAM, 2.4F, 0.45F);
+            sl.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y, center.z, 18, width, 0.65D, width, 0.01D);
+            sl.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, center.y, center.z, 12, width, 0.8D, width, 0.04D);
+        }
+
+        if (this.deathTime <= 16 && this.deathTime % 4 == 0) {
+            float pitch = 0.54F + this.deathTime * 0.02F;
+            this.playSound(SoundEvents.WARDEN_HEARTBEAT, 1.8F, pitch);
+        }
+
+        if (this.deathTime == 10) {
+            this.playSound(SoundEvents.SCULK_SHRIEKER_SHRIEK, 2.6F, 0.72F);
+        }
+
+        if (this.deathTime == 18) {
+            this.playSound(SoundEvents.SOUL_ESCAPE.value(), 2.7F, 0.72F);
+            this.playSound(SoundEvents.SCULK_SHRIEKER_SHRIEK, 3.0F, 0.82F);
+        }
+
+        if (this.deathTime % 2 == 0) {
+            sl.sendParticles(ParticleTypes.SOUL, center.x, center.y - 0.55D, center.z, 6, width, 0.85D, width, 0.02D);
+            sl.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y - 0.2D, center.z, 4, width * 0.8D, 0.7D, width * 0.8D, 0.01D);
+            sl.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y, center.z, 4, width, 0.75D, width, 0.01D);
+        }
+
+        if (this.deathTime % 3 == 0) {
+            double radius = 0.45D + this.deathTime * 0.04D;
+            for (int i = 0; i < 3; i++) {
+                double angle = this.getRandom().nextDouble() * Math.PI * 2.0D;
+                double x = center.x + Math.cos(angle) * radius;
+                double y = center.y - 0.45D + this.getRandom().nextDouble() * this.getBbHeight();
+                double z = center.z + Math.sin(angle) * radius;
+                sl.sendParticles(ParticleTypes.REVERSE_PORTAL, x, y, z, 1, 0.04D, 0.08D, 0.04D, 0.01D);
+                sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, y, z, 1, 0.02D, 0.03D, 0.02D, 0.005D);
+            }
+        }
+
+        if (this.deathTime >= 16) {
+            sl.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.1D, center.z, 14, width * 0.9D, 0.9D, width * 0.9D, 0.1D);
+            sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, center.x, center.y + 0.15D, center.z, 8, 0.55D, 0.6D, 0.55D, 0.01D);
+        }
+    }
+}

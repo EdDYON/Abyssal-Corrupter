@@ -1,0 +1,89 @@
+plugins {
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '1.0.15'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+group = 'com.eddy1.abyssalcorrupter'
+version = '1.0.0'
+
+base {
+    archivesName = 'abyssal_corrupter'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = '21.1.65'
+
+    runs {
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'abyssal_corrupter'
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'abyssal_corrupter'
+        }
+    }
+
+    mods {
+        abyssal_corrupter {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        name = "GeckoLib"
+        url = "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/"
+    }
+}
+
+dependencies {
+    implementation "software.bernie.geckolib:geckolib-neoforge-1.21.1:4.6.6"
+}
+
+tasks.withType(ProcessResources).configureEach {
+    var replaceProperties = [
+            minecraft_version      : "1.21.1",
+            minecraft_version_range: "[1.21.1, 1.22)",
+            neo_version            : "21.1.65",
+            neo_version_range      : "[21.1.65,)",
+            loader_version_range   : "[4,)",
+            mod_id                 : "abyssal_corrupter",
+            mod_name               : "Abyssal Corrupter",
+            mod_license            : "MIT",
+            mod_version            : "1.0.0",
+            mod_authors            : "eddy1",
+            mod_description        : "A boss mod built around the Abyssal Corrupter."
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/neoforge.mods.toml']) {
+        expand replaceProperties
+    }
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
