@@ -1,6 +1,7 @@
 package com.eddy1.tidesourcer.event;
 
 import com.eddy1.tidesourcer.TideSourcerMod;
+import com.eddy1.tidesourcer.client.gui.AbyssalBossHud;
 import com.eddy1.tidesourcer.client.renderer.TideSourcerRenderer;
 import com.eddy1.tidesourcer.command.TideSourcerCommands;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
@@ -11,6 +12,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
@@ -32,6 +34,14 @@ public class ModEvents {
         @SubscribeEvent
         public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
             event.registerEntityRenderer(EntityInit.ABYSSAL_CORRUPTER.get(), TideSourcerRenderer::new);
+        }
+    }
+
+    @EventBusSubscriber(modid = TideSourcerMod.MOD_ID, value = Dist.CLIENT)
+    public static class ClientForgeEvents {
+        @SubscribeEvent
+        public static void onBossBarRender(CustomizeGuiOverlayEvent.BossEventProgress event) {
+            AbyssalBossHud.render(event);
         }
     }
 

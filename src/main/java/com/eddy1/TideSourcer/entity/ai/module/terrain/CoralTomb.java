@@ -1,6 +1,7 @@
 package com.eddy1.tidesourcer.entity.ai.module.terrain;
 
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
+import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -27,6 +28,10 @@ public class CoralTomb {
 
     public static void handle(TideSourcerEntity boss, ServerLevel sl) {
         LivingEntity target = boss.getTarget();
+        if (!SkillCastHelper.snapCasterToGround(boss, sl, 3.5D)) {
+            boss.resetAttack();
+            return;
+        }
         boss.getNavigation().stop();
         boss.setDeltaMovement(Vec3.ZERO);
         boss.hasImpulse = true;
@@ -93,7 +98,7 @@ public class CoralTomb {
     }
 
     private static void emitSonicNova(TideSourcerEntity boss, ServerLevel sl, int novaTick) {
-        Vec3 center = boss.position().add(0.0D, 1.5D, 0.0D);
+        Vec3 center = SkillCastHelper.groundCenter(boss, sl, 1.5D);
         double baseAngle = boss.coralBaseAngle;
         double angleStep = (Math.PI * 2.0D) / WAVE_COUNT;
         double currentDistance = WAVE_RANGE * novaTick / (double) NOVA_TICKS;

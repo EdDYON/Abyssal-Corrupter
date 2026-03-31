@@ -1,6 +1,7 @@
 package com.eddy1.tidesourcer.entity.ai.module.epic;
 
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
+import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -36,6 +37,10 @@ public class EchoingPulseDomain {
 
     public static void handle(TideSourcerEntity boss, ServerLevel sl) {
         LivingEntity target = boss.getTarget();
+        if (!SkillCastHelper.snapCasterToGround(boss, sl, 3.5D)) {
+            boss.resetAttack();
+            return;
+        }
 
         if (boss.attackTick == 1) {
             boss.echoDomainCenter = chooseDomainCenter(boss, target, sl);

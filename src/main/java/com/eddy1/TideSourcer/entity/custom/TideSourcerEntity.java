@@ -4,6 +4,7 @@ import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.ai.SunkenTitanCombatGoal;
 import com.eddy1.tidesourcer.entity.ai.SunkenTitanCombatManager;
 import com.eddy1.tidesourcer.entity.ai.SunkenTitanSpeechManager;
+import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.ai.module.epic.EchoingPulseDomain;
 import com.eddy1.tidesourcer.entity.ai.module.terrain.AbyssalTrench;
 import net.minecraft.core.BlockPos;
@@ -136,6 +137,10 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     public int targetFarTicks = 0;
     public int targetNoSightTicks = 0;
     public int targetAirTicks = 0;
+    private int pursuitAssistCooldown = 0;
+    private int pursuitRecoveryCooldown = 0;
+    private int pursuitStuckTicks = 0;
+    private Vec3 lastPursuitSamplePos = null;
 
     public int followUpIntent = FOLLOW_UP_NONE;
     public int followUpTicks = 0;
@@ -229,6 +234,13 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
                 AbyssalEffects.spawnInfectionCloud((ServerLevel) this.level(), this.position().add(0.0D, 1.0D, 0.0D), 0.12D, 0.25D);
             }
             return;
+        }
+
+        if (this.pursuitRecoveryCooldown > 0) {
+            this.pursuitRecoveryCooldown--;
+        }
+        if (this.pursuitAssistCooldown > 0) {
+            this.pursuitAssistCooldown--;
         }
 
         if (this.echoDomainConfusionTick > 0) {
@@ -344,6 +356,7 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         this.coralBaseAngle = 0.0D;
         this.coralHitTicks.clear();
         this.resetCombatMemory();
+        this.resetPursuitRecoveryState();
         this.setInvisible(false);
         this.attackState = 0;
         this.attackTick = 0;
@@ -476,6 +489,7 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         this.lastAttackStateUsed = 0;
         this.lastAttackVariantUsed = 0;
         this.repeatedAttackCount = 0;
+        this.resetPursuitRecoveryState();
     }
 
     public void setFollowUpIntent(int intent, int ticks) {
@@ -486,6 +500,16 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     @Override
     public boolean shouldBeSaved() {
         return !this.isClone && super.shouldBeSaved();
+    }
+
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        return this.isClone && super.removeWhenFarAway(distanceToClosestPlayer);
+    }
+
+    @Override
+    public boolean requiresCustomPersistence() {
+        return !this.isClone || super.requiresCustomPersistence();
     }
 
     @Override
@@ -566,6 +590,9 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         super.customServerAiStep();
         if (!this.isClone) {
             this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
+            if (this.level() instanceof ServerLevel sl) {
+                this.tryRecoverLostTarget(sl);
+            }
         }
     }
 
@@ -673,6 +700,167 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     private boolean isEncounterTargetInvalid() {
         LivingEntity target = this.getTarget();
         return target == null || !target.isAlive() || target.isRemoved() || target.level() != this.level();
+    }
+
+    private void tryRecoverLostTarget(ServerLevel sl) {
+        if (this.attackState != 0 || this.isManualTestMode() || this.hasPersistentEpicActive()) {
+            return;
+        }
+
+        LivingEntity target = this.getTarget();
+        if (target == null || !target.isAlive() || target.level() != this.level()) {
+            this.resetPursuitRecoveryState();
+            return;
+        }
+
+        double distanceSqr = this.distanceToSqr(target);
+        double verticalGap = Math.abs(target.getY() - this.getY());
+        if (distanceSqr < 36.0D && verticalGap < 3.0D && this.targetNoSightTicks < 6) {
+            this.pursuitStuckTicks = Math.max(0, this.pursuitStuckTicks - 4);
+            return;
+        }
+
+        if (this.tickCount % 12 == 0) {
+            this.samplePursuitStuckState(distanceSqr, verticalGap);
+        }
+
+        if (this.tryNaturalPursuitAssist(sl, target, distanceSqr, verticalGap)) {
+            return;
+        }
+
+        if (this.pursuitRecoveryCooldown > 0) {
+            return;
+        }
+
+        boolean severeLayerSplit = verticalGap > 6.0D && this.targetNoSightTicks > 10 && distanceSqr > 49.0D;
+        boolean fullyStranded = distanceSqr > 256.0D && this.targetNoSightTicks > 18 && this.targetFarTicks > 10;
+        if (!severeLayerSplit && !fullyStranded && this.pursuitStuckTicks < 24) {
+            return;
+        }
+
+        Vec3 recoveryAnchor = this.findRecoveryAnchor(sl, target);
+        if (recoveryAnchor == null) {
+            return;
+        }
+
+        Vec3 origin = this.position().add(0.0D, 1.0D, 0.0D);
+        AbyssalEffects.spawnInfectionCloud(sl, origin, 0.45D, 0.55D);
+        sl.sendParticles(ParticleTypes.REVERSE_PORTAL, origin.x, origin.y, origin.z, 8, 0.28D, 0.45D, 0.28D, 0.03D);
+
+        this.teleportTo(recoveryAnchor.x, recoveryAnchor.y, recoveryAnchor.z);
+        this.getNavigation().stop();
+        this.setDeltaMovement(Vec3.ZERO);
+        this.hasImpulse = true;
+        this.hurtMarked = true;
+        this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        this.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.6F, 0.64F);
+
+        Vec3 arrival = recoveryAnchor.add(0.0D, 1.0D, 0.0D);
+        AbyssalEffects.spawnInfectionCloud(sl, arrival, 0.65D, 0.55D);
+        sl.sendParticles(ParticleTypes.SCULK_SOUL, arrival.x, arrival.y, arrival.z, 8, 0.25D, 0.35D, 0.25D, 0.01D);
+
+        this.pursuitRecoveryCooldown = 90;
+        this.pursuitStuckTicks = 0;
+        this.lastPursuitSamplePos = this.position();
+    }
+
+    private boolean tryNaturalPursuitAssist(ServerLevel sl, LivingEntity target, double distanceSqr, double verticalGap) {
+        if (this.pursuitAssistCooldown > 0 || !this.onGround() || distanceSqr < 16.0D || distanceSqr > 324.0D) {
+            return false;
+        }
+
+        double deltaY = target.getY() - this.getY();
+        boolean lostSight = this.targetNoSightTicks > 6;
+        Vec3 toTarget = target.position().subtract(this.position());
+        Vec3 horizontal = new Vec3(toTarget.x, 0.0D, toTarget.z);
+        if (horizontal.lengthSqr() < 1.0E-4D) {
+            return false;
+        }
+
+        Vec3 forward = horizontal.normalize();
+        boolean upwardChase = deltaY > 2.75D && verticalGap < 10.0D && (lostSight || this.targetFarTicks > 6);
+        boolean downwardChase = deltaY < -3.0D && verticalGap < 16.0D && (lostSight || this.pursuitStuckTicks > 8);
+        if (!upwardChase && !downwardChase) {
+            return false;
+        }
+
+        double horizontalSpeed = upwardChase ? 0.95D : 1.20D;
+        double verticalSpeed = upwardChase ? 0.72D : 0.16D;
+        Vec3 assistVelocity = forward.scale(horizontalSpeed).add(0.0D, verticalSpeed, 0.0D);
+
+        this.getNavigation().stop();
+        this.setDeltaMovement(assistVelocity);
+        this.hasImpulse = true;
+        this.hurtMarked = true;
+        this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        this.playSound(SoundEvents.PHANTOM_SWOOP, 1.3F, upwardChase ? 0.78F : 0.92F);
+
+        Vec3 effectPos = this.position().add(0.0D, 0.8D, 0.0D);
+        AbyssalEffects.spawnFearBurst(sl, effectPos, 0.35D, 0.25D);
+        AbyssalEffects.spawnInfectionCloud(sl, effectPos, 0.28D, 0.30D);
+
+        this.pursuitAssistCooldown = upwardChase ? 20 : 16;
+        this.lastPursuitSamplePos = this.position();
+        return true;
+    }
+
+    private void samplePursuitStuckState(double distanceSqr, double verticalGap) {
+        Vec3 samplePos = this.position();
+        if (this.lastPursuitSamplePos == null) {
+            this.lastPursuitSamplePos = samplePos;
+            return;
+        }
+
+        double dx = samplePos.x - this.lastPursuitSamplePos.x;
+        double dz = samplePos.z - this.lastPursuitSamplePos.z;
+        double movedHorizontalSqr = dx * dx + dz * dz;
+        boolean trouble = distanceSqr > 64.0D
+                && (this.targetNoSightTicks > 10 || verticalGap > 4.0D || this.targetFarTicks > 10);
+
+        if (trouble && movedHorizontalSqr < 0.49D) {
+            this.pursuitStuckTicks = Math.min(40, this.pursuitStuckTicks + 6);
+        } else {
+            this.pursuitStuckTicks = Math.max(0, this.pursuitStuckTicks - 4);
+        }
+
+        this.lastPursuitSamplePos = samplePos;
+    }
+
+    private Vec3 findRecoveryAnchor(ServerLevel sl, LivingEntity target) {
+        Vec3 away = this.position().subtract(target.position());
+        Vec3 horizontal = new Vec3(away.x, 0.0D, away.z);
+        if (horizontal.lengthSqr() < 1.0E-4D) {
+            Vec3 targetLook = target.getLookAngle().multiply(-1.0D, 0.0D, -1.0D);
+            horizontal = new Vec3(targetLook.x, 0.0D, targetLook.z);
+        }
+        if (horizontal.lengthSqr() < 1.0E-4D) {
+            horizontal = new Vec3(1.0D, 0.0D, 0.0D);
+        }
+
+        double baseAngle = Math.atan2(horizontal.z, horizontal.x);
+        double[] radii = {6.5D, 7.5D, 4.5D};
+        double[] angleOffsets = {0.0D, Math.PI / 4.0D, -Math.PI / 4.0D, Math.PI / 2.5D, -Math.PI / 2.5D, Math.PI};
+
+        for (double radius : radii) {
+            for (double angleOffset : angleOffsets) {
+                double angle = baseAngle + angleOffset;
+                double x = target.getX() + Math.cos(angle) * radius;
+                double z = target.getZ() + Math.sin(angle) * radius;
+                Vec3 candidate = SkillCastHelper.findStandablePosition(this, sl, x, target.getY(), z, 8);
+                if (candidate != null && candidate.distanceToSqr(target.position()) >= 12.25D) {
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void resetPursuitRecoveryState() {
+        this.pursuitAssistCooldown = 0;
+        this.pursuitRecoveryCooldown = 0;
+        this.pursuitStuckTicks = 0;
+        this.lastPursuitSamplePos = null;
     }
 
     private static int updateCombatCounter(int current, boolean active, int gain, int decay, int cap) {

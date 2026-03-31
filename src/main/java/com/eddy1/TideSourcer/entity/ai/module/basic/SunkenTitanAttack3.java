@@ -1,6 +1,7 @@
 package com.eddy1.tidesourcer.entity.ai.module.basic;
 
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
+import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -46,20 +47,26 @@ public class SunkenTitanAttack3 {
             }
             if (boss.attackTick >= 80) boss.resetAttack();
         } else if (boss.attackVariant == 2) {
+            if (boss.attackTick == 1 && !SkillCastHelper.snapCasterToGround(boss, sl, 3.0D)) {
+                boss.resetAttack();
+                return;
+            }
+            Vec3 center = SkillCastHelper.groundCenter(boss, sl, 1.0D);
             if (boss.attackTick == 1) {
                 boss.playSound(SoundEvents.RESPAWN_ANCHOR_CHARGE, 1.6F, 0.78F);
             }
             if (boss.attackTick >= 6 && boss.attackTick < 20 && boss.attackTick % 4 == 2) {
-                renderRepulsionTelegraph(sl, boss, boss.attackTick);
+                renderRepulsionTelegraph(sl, center, boss.attackTick);
                 if (boss.attackTick == 14) {
                     boss.playSound(SoundEvents.WARDEN_HEARTBEAT, 1.6F, 0.74F);
                 }
             }
             if (boss.attackTick == 20) {
                 boss.playSound(SoundEvents.WARDEN_SONIC_BOOM, 2.0F, 1.0F);
-                AbyssalEffects.spawnFearBurst(sl, boss.position().add(0, 1.0, 0), 3.0, 1.0);
-                AbyssalEffects.spawnImpact(sl, boss.position().add(0, 1.0, 0), 3.0, 1.0);
-                spawnRepulsionWave(sl, boss);
+                AbyssalEffects.spawnFearBurst(sl, center, 3.0, 1.0);
+                AbyssalEffects.spawnImpact(sl, center, 3.0, 1.0);
+                renderRepulsionReleaseFlash(sl, center);
+                spawnRepulsionWave(sl, center);
 
                 AABB pushBox = boss.getBoundingBox().inflate(8.0D);
                 List<LivingEntity> targets = sl.getEntitiesOfClass(LivingEntity.class, pushBox, e -> e != boss && e.isAlive());
@@ -78,7 +85,7 @@ public class SunkenTitanAttack3 {
                 }
             }
             if (boss.attackTick > 20 && boss.attackTick <= 28 && boss.attackTick % 4 == 0) {
-                renderRepulsionAftershock(sl, boss, boss.attackTick - 20);
+                renderRepulsionAftershock(sl, center, boss.attackTick - 20);
             }
             if (boss.attackTick >= 80) boss.resetAttack();
         } else if (boss.attackVariant == 3) {
@@ -107,8 +114,7 @@ public class SunkenTitanAttack3 {
         }
     }
 
-    private static void spawnRepulsionWave(ServerLevel sl, TideSourcerEntity boss) {
-        Vec3 center = boss.position().add(0.0D, 1.0D, 0.0D);
+    private static void spawnRepulsionWave(ServerLevel sl, Vec3 center) {
         for (int ring = 1; ring <= 3; ring++) {
             double radius = ring * 2.3D;
             int points = 10 + ring * 2;
@@ -116,16 +122,16 @@ public class SunkenTitanAttack3 {
                 double angle = (Math.PI * 2.0D * i) / points;
                 double x = center.x + Math.cos(angle) * radius;
                 double z = center.z + Math.sin(angle) * radius;
-                sl.sendParticles(ParticleTypes.SONIC_BOOM, x, center.y, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+                sl.sendParticles(ParticleTypes.SONIC_BOOM, x, center.y + 0.04D, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
                 if ((i + ring) % 2 == 0) {
-                    sl.sendParticles(ParticleTypes.SOUL, x, center.y, z, 1, 0.04D, 0.0D, 0.04D, 0.0D);
+                    sl.sendParticles(ParticleTypes.SOUL, x, center.y + 0.02D, z, 1, 0.04D, 0.0D, 0.04D, 0.0D);
+                    sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, center.y + 0.06D, z, 1, 0.03D, 0.02D, 0.03D, 0.0D);
                 }
             }
         }
     }
 
-    private static void renderRepulsionTelegraph(ServerLevel sl, TideSourcerEntity boss, int tick) {
-        Vec3 center = boss.position().add(0.0D, 1.0D, 0.0D);
+    private static void renderRepulsionTelegraph(ServerLevel sl, Vec3 center, int tick) {
         double radius = 1.8D + tick * 0.22D;
         int points = 12 + tick / 2;
 
@@ -142,8 +148,7 @@ public class SunkenTitanAttack3 {
         sl.sendParticles(ParticleTypes.REVERSE_PORTAL, center.x, center.y + 0.15D, center.z, 2, 0.2D, 0.05D, 0.2D, 0.0D);
     }
 
-    private static void renderRepulsionAftershock(ServerLevel sl, TideSourcerEntity boss, int waveIndex) {
-        Vec3 center = boss.position().add(0.0D, 1.0D, 0.0D);
+    private static void renderRepulsionAftershock(ServerLevel sl, Vec3 center, int waveIndex) {
         double radius = 4.0D + waveIndex * 0.9D;
         int points = 18 + waveIndex * 2;
 
@@ -154,6 +159,26 @@ public class SunkenTitanAttack3 {
             sl.sendParticles(ParticleTypes.SONIC_BOOM, x, center.y + 0.05D, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
             if (i % 3 == 0) {
                 sl.sendParticles(ParticleTypes.SMOKE, x, center.y + 0.02D, z, 1, 0.02D, 0.0D, 0.02D, 0.0D);
+            }
+        }
+    }
+
+    private static void renderRepulsionReleaseFlash(ServerLevel sl, Vec3 center) {
+        sl.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.1D, center.z, 1, 0.1D, 0.1D, 0.1D, 0.0D);
+        sl.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y + 0.1D, center.z, 10, 0.6D, 0.08D, 0.6D, 0.02D);
+        sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, center.x, center.y + 0.14D, center.z, 12, 0.75D, 0.12D, 0.75D, 0.01D);
+
+        for (int ring = 0; ring < 4; ring++) {
+            double radius = 1.2D + ring * 1.45D;
+            int points = 14 + ring * 4;
+            for (int i = 0; i < points; i++) {
+                double angle = (Math.PI * 2.0D * i) / points;
+                double x = center.x + Math.cos(angle) * radius;
+                double z = center.z + Math.sin(angle) * radius;
+                sl.sendParticles(ParticleTypes.SONIC_BOOM, x, center.y + 0.03D, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+                if ((i + ring) % 2 == 0) {
+                    sl.sendParticles(ParticleTypes.SCULK_SOUL, x, center.y + 0.08D, z, 1, 0.02D, 0.02D, 0.02D, 0.0D);
+                }
             }
         }
     }

@@ -81,3 +81,9 @@
 ## 备注
 
 可能不是最终版本
+
+## 授权与第三方资源
+
+- 项目原创内容的归属和适用范围见 [LICENSE](LICENSE)
+- 打包进模组 jar 的授权文件位于 `META-INF/LICENSE.txt`
+- 打包进模组 jar 的第三方模型协议位于 `META-INF/THIRD_PARTY_ASSET_NOTICES.txt`

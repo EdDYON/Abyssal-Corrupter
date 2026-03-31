@@ -1,6 +1,7 @@
 package com.eddy1.tidesourcer.entity.ai.module.basic;
 
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
+import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -104,6 +105,10 @@ public class SunkenTitanAttack4 {
             if (boss.attackTick >= 60) boss.resetAttack();
         } else if (boss.attackVariant == 3) {
             LivingEntity target = boss.getTarget();
+            if (!SkillCastHelper.snapCasterToGround(boss, sl, 3.5D)) {
+                boss.resetAttack();
+                return;
+            }
             boss.getNavigation().stop();
             boss.setDeltaMovement(Vec3.ZERO);
             boss.hasImpulse = true;

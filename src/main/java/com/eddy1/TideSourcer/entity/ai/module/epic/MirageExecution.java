@@ -1,7 +1,9 @@
 package com.eddy1.tidesourcer.entity.ai.module.epic;
 
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
+import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -9,6 +11,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 public class MirageExecution {
     public static final int IDENTIFY_TICKS = 60;
@@ -20,6 +23,8 @@ public class MirageExecution {
     private static final double CLONE_RADIUS = 15.0D;
     private static final float CLONE_SHOT_DAMAGE = 6.0F;
     private static final float FINAL_SHOT_DAMAGE = 24.0F;
+    private static final DustParticleOptions TRUE_BODY_PULSE = new DustParticleOptions(new Vector3f(1.0F, 0.16F, 0.20F), 1.0F);
+    private static final DustParticleOptions CLONE_DECAY_PULSE = new DustParticleOptions(new Vector3f(0.16F, 0.74F, 0.86F), 0.72F);
 
     @SuppressWarnings("unchecked")
     public static void handle(TideSourcerEntity boss, ServerLevel sl) {
@@ -41,13 +46,18 @@ public class MirageExecution {
                 double angle = Math.toRadians(i * 45);
                 double px = target.getX() + Math.cos(angle) * CLONE_RADIUS;
                 double pz = target.getZ() + Math.sin(angle) * CLONE_RADIUS;
+                Vec3 anchor = SkillCastHelper.findStandablePosition(boss, sl, px, target.getY(), pz, 8);
+                double spawnY = anchor != null ? anchor.y : target.getY();
 
                 if (i == trueIndex) {
-                    boss.teleportTo(px, target.getY(), pz);
+                    boss.teleportTo(px, spawnY, pz);
+                    boss.setDeltaMovement(Vec3.ZERO);
+                    boss.hasImpulse = true;
+                    boss.hurtMarked = true;
                     boss.getLookControl().setLookAt(target);
                 } else {
                     TideSourcerEntity clone = new TideSourcerEntity((EntityType<? extends Monster>) boss.getType(), sl);
-                    clone.setPos(px, target.getY(), pz);
+                    clone.setPos(px, spawnY, pz);
                     clone.getLookControl().setLookAt(target);
                     clone.isClone = true;
                     clone.mainBoss = boss;
@@ -67,6 +77,7 @@ public class MirageExecution {
                     }
                 }
             }
+            emitMirageReadabilityCues(boss, sl, false);
             if (boss.mirageFailed) {
                 boss.attackTick = IDENTIFY_TICKS;
             } else if (boss.mirageSuccess) {
@@ -88,6 +99,7 @@ public class MirageExecution {
                 triggerMirageTaunt(boss);
             }
             pulseMirageCharge(boss, sl);
+            emitMirageReadabilityCues(boss, sl, true);
         }
 
         if (boss.attackTick == RELEASE_TICK && !boss.mirageFinalShotFired) {
@@ -148,6 +160,53 @@ public class MirageExecution {
                 }
             }
         }
+    }
+
+    private static void emitMirageReadabilityCues(TideSourcerEntity boss, ServerLevel sl, boolean barragePrep) {
+        int realPulseRate = barragePrep ? 3 : 5;
+        if (boss.attackTick % realPulseRate == 0) {
+            spawnTrueBodyCue(boss, sl, barragePrep);
+        }
+
+        int clonePulseRate = barragePrep ? 7 : 9;
+        if (boss.attackTick % clonePulseRate == 0) {
+            for (TideSourcerEntity clone : boss.activeClones) {
+                if (clone != null && clone.isAlive()) {
+                    spawnCloneCue(clone, sl, barragePrep);
+                }
+            }
+        }
+    }
+
+    private static void spawnTrueBodyCue(TideSourcerEntity boss, ServerLevel sl, boolean barragePrep) {
+        Vec3 crown = boss.position().add(0.0D, boss.getBbHeight() * 0.88D, 0.0D);
+        Vec3 lateral = horizontalSideVector(boss).scale(0.34D);
+        Vec3 leftHorn = crown.add(lateral).add(0.0D, 0.18D, 0.0D);
+        Vec3 rightHorn = crown.subtract(lateral).add(0.0D, 0.18D, 0.0D);
+
+        sl.sendParticles(TRUE_BODY_PULSE, crown.x, crown.y, crown.z, barragePrep ? 7 : 4, 0.18D, 0.08D, 0.18D, 0.0D);
+        sl.sendParticles(ParticleTypes.SCULK_SOUL, leftHorn.x, leftHorn.y, leftHorn.z, barragePrep ? 3 : 2, 0.03D, 0.04D, 0.03D, 0.0D);
+        sl.sendParticles(ParticleTypes.SCULK_SOUL, rightHorn.x, rightHorn.y, rightHorn.z, barragePrep ? 3 : 2, 0.03D, 0.04D, 0.03D, 0.0D);
+        sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, crown.x, crown.y + 0.08D, crown.z, barragePrep ? 4 : 2, 0.1D, 0.06D, 0.1D, 0.0D);
+        if (barragePrep) {
+            sl.sendParticles(ParticleTypes.DAMAGE_INDICATOR, crown.x, crown.y + 0.04D, crown.z, 2, 0.08D, 0.04D, 0.08D, 0.0D);
+        }
+    }
+
+    private static void spawnCloneCue(TideSourcerEntity clone, ServerLevel sl, boolean barragePrep) {
+        Vec3 chest = clone.position().add(0.0D, clone.getBbHeight() * 0.74D, 0.0D);
+        sl.sendParticles(CLONE_DECAY_PULSE, chest.x, chest.y, chest.z, barragePrep ? 2 : 1, 0.08D, 0.05D, 0.08D, 0.0D);
+        sl.sendParticles(ParticleTypes.ASH, chest.x, chest.y + 0.02D, chest.z, barragePrep ? 2 : 1, 0.12D, 0.08D, 0.12D, 0.0D);
+    }
+
+    private static Vec3 horizontalSideVector(TideSourcerEntity entity) {
+        Vec3 look = entity.getLookAngle().multiply(1.0D, 0.0D, 1.0D);
+        if (look.lengthSqr() < 1.0E-4D) {
+            look = new Vec3(0.0D, 0.0D, 1.0D);
+        } else {
+            look = look.normalize();
+        }
+        return new Vec3(-look.z, 0.0D, look.x);
     }
 
     private static void fireSimultaneousVolley(TideSourcerEntity boss, ServerLevel sl, LivingEntity target) {

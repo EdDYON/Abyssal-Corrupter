@@ -1,6 +1,7 @@
 package com.eddy1.tidesourcer.entity.ai.module.basic;
 
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
+import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -20,6 +21,10 @@ public final class AbyssalTaunt {
     public static void handle(TideSourcerEntity boss, ServerLevel sl) {
         LivingEntity target = boss.getTarget();
         if (!(target instanceof Player player) || !player.isAlive()) {
+            boss.resetAttack();
+            return;
+        }
+        if (!SkillCastHelper.snapCasterToGround(boss, sl, 3.5D)) {
             boss.resetAttack();
             return;
         }

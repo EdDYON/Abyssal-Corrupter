@@ -1,29 +1,29 @@
 modLoader="javafml"
-loaderVersion="[4,)"
-license="MIT"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
 
 [[mods]]
-modId="abyssal_corrupter"
-version="1.0.0"
-displayName="Abyssal Corrupter"
-authors="EdDYON"
-description="嘘！别出声，前面就是深渊侵蚀者！"
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description="${mod_description}"
 
-[[dependencies.abyssal_corrupter]]
+[[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
-versionRange="[21.1.65,)"
+versionRange="${neo_version_range}"
 ordering="NONE"
 side="BOTH"
 
-[[dependencies.abyssal_corrupter]]
+[[dependencies.${mod_id}]]
 modId="minecraft"
 type="required"
-versionRange="[1.21.1, 1.22)"
+versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
 
-[[dependencies.abyssal_corrupter]]
+[[dependencies.${mod_id}]]
 modId="geckolib"
 type="required"
 versionRange="[4,)"

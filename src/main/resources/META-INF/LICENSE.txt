@@ -1,0 +1,31 @@
+Abyssal Corrupter License Notice
+
+Copyright (c) EdDYON
+
+This mod contains original content by EdDYON and third-party model assets
+that keep their own terms.
+
+1. Original project content
+
+Unless a file or notice explicitly says otherwise, the original source code,
+combat design, balance logic, dialogue, configuration, textures, UI assets,
+and other original project content in this mod remain under EdDYON's own
+license / release-page terms.
+
+This bundled notice preserves that ownership and scope. It does not replace
+any separate agreement, storefront page, blog notice, or release statement
+published by EdDYON for the original Abyssal Corrupter project.
+
+2. Third-party assets
+
+Some imported model assets are not original EdDYON content. Those assets remain
+subject to the terms published by their original author.
+
+See:
+- META-INF/THIRD_PARTY_ASSET_NOTICES.txt
+
+3. Scope separation
+
+Third-party asset terms only apply to the third-party assets they describe.
+They do not relicense, override, or weaken EdDYON's rights over the rest of
+this mod.

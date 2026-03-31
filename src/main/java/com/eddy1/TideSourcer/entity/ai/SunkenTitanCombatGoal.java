@@ -1,6 +1,8 @@
 package com.eddy1.tidesourcer.entity.ai;
 
+import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 
@@ -167,6 +169,9 @@ public class SunkenTitanCombatGoal extends Goal {
 
     private boolean tryRetreatTaunt(CombatContext context) {
         if (!context.playerTarget() || this.boss.cdTaunt > 0) {
+            return false;
+        }
+        if (!this.canStartGroundedCast(0.9D)) {
             return false;
         }
         if (context.distanceSqr() < 1600.0D) {
@@ -353,7 +358,7 @@ public class SunkenTitanCombatGoal extends Goal {
     }
 
     private int scoreRepulsion(CombatContext context) {
-        if (this.boss.cdRepulsion > 0 || context.distance() > 9.0D) {
+        if (this.boss.cdRepulsion > 0 || context.distance() > 9.0D || !this.canStartGroundedCast(0.9D)) {
             return INVALID_SCORE;
         }
 
@@ -377,7 +382,7 @@ public class SunkenTitanCombatGoal extends Goal {
     }
 
     private int scoreHook(CombatContext context) {
-        if (this.boss.cdHook > 0 || !context.hasSight() || context.distance() < 6.0D || context.distance() > 20.0D) {
+        if (this.boss.cdHook > 0 || !context.hasSight() || context.distance() < 6.0D || context.distance() > 20.0D || !this.canStartGroundedCast(0.9D)) {
             return INVALID_SCORE;
         }
 
@@ -388,7 +393,7 @@ public class SunkenTitanCombatGoal extends Goal {
     }
 
     private int scoreBreath(CombatContext context) {
-        if (this.boss.cdBreath > 0 || !context.hasSight() || context.distance() < 4.0D || context.distance() > 16.0D) {
+        if (this.boss.cdBreath > 0 || !context.hasSight() || context.distance() < 4.0D || context.distance() > 16.0D || !this.canStartGroundedCast(0.9D)) {
             return INVALID_SCORE;
         }
 
@@ -399,7 +404,7 @@ public class SunkenTitanCombatGoal extends Goal {
     }
 
     private int scoreRay(CombatContext context) {
-        if (this.boss.cdRay > 0 || !context.hasSight() || context.distance() < 12.0D || context.distance() > 32.0D) {
+        if (this.boss.cdRay > 0 || !context.hasSight() || context.distance() < 12.0D || context.distance() > 32.0D || !this.canStartGroundedCast(0.9D)) {
             return INVALID_SCORE;
         }
 
@@ -437,7 +442,7 @@ public class SunkenTitanCombatGoal extends Goal {
     }
 
     private int scoreDomain(CombatContext context) {
-        if (!this.boss.phase60 || this.boss.cdDomain > 0 || context.distance() > 18.0D) {
+        if (!this.boss.phase60 || this.boss.cdDomain > 0 || context.distance() > 18.0D || !this.canStartGroundedCast(1.1D)) {
             return INVALID_SCORE;
         }
 
@@ -476,7 +481,7 @@ public class SunkenTitanCombatGoal extends Goal {
     }
 
     private int scoreNova(CombatContext context) {
-        if (!this.boss.phase70 || this.boss.cdNova > 0 || context.distance() > 22.0D) {
+        if (!this.boss.phase70 || this.boss.cdNova > 0 || context.distance() > 22.0D || !this.canStartGroundedCast(1.1D)) {
             return INVALID_SCORE;
         }
 
@@ -560,6 +565,13 @@ public class SunkenTitanCombatGoal extends Goal {
             };
             default -> 0;
         };
+    }
+
+    private boolean canStartGroundedCast(double tolerance) {
+        if (!(this.boss.level() instanceof ServerLevel sl)) {
+            return true;
+        }
+        return SkillCastHelper.isNearGround(this.boss, sl, tolerance);
     }
 
     private record CombatContext(
