@@ -1,5 +1,6 @@
 package com.eddy1.tidesourcer.entity.ai.module.basic;
 
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
@@ -39,7 +40,7 @@ public class SunkenTitanAttack3 {
                         e.hasImpulse = true;
                         e.hurtMarked = true;
                         if (distSqr <= 16.0D && boss.attackTick % 10 == 0) {
-                            e.hurt(boss.damageSources().mobAttack(boss), 8.0F);
+                            e.hurt(boss.damageSources().mobAttack(boss), AbyssalConfig.scaledDamage(8.0F));
                             e.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 0, false, false, false));
                         }
                     }
@@ -74,7 +75,7 @@ public class SunkenTitanAttack3 {
                     Vec3 push = e.position().subtract(boss.position()).normalize().scale(1.8D);
                     e.setDeltaMovement(push.x, 0.6D, push.z);
                     e.hasImpulse = true;
-                    e.hurt(boss.damageSources().mobAttack(boss), 10.0F);
+                    e.hurt(boss.damageSources().mobAttack(boss), AbyssalConfig.scaledDamage(10.0F));
                     e.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 1, false, false, false));
                     AbyssalEffects.spawnImpact(sl, e.position().add(0.0D, 1.0D, 0.0D), 0.35D, 0.35D);
                 }
@@ -107,7 +108,7 @@ public class SunkenTitanAttack3 {
                 target.removeEffect(MobEffects.LEVITATION);
                 target.setDeltaMovement(0, -2.5D, 0);
                 target.hasImpulse = true;
-                target.hurt(boss.damageSources().magic(), 30.0F);
+                target.hurt(boss.damageSources().magic(), AbyssalConfig.scaledDamage(30.0F));
                 target.addEffect(new MobEffectInstance(MobEffects.WITHER, 80, 0, false, false, false));
             }
             if (boss.attackTick >= 90) boss.resetAttack();

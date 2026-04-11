@@ -154,6 +154,9 @@ public class SunkenTitanCombatGoal extends Goal {
             speed = 1.2D;
         }
 
+        if (this.boss.isPhaseTwoActive()) {
+            speed += context.distanceSqr() > 64.0D ? 0.16D : 0.08D;
+        }
         if (this.boss.followUpIntent == TideSourcerEntity.FOLLOW_UP_CLOSE || this.boss.followUpIntent == TideSourcerEntity.FOLLOW_UP_CHASE) {
             speed += 0.14D;
         }
@@ -182,7 +185,7 @@ public class SunkenTitanCombatGoal extends Goal {
         }
 
         this.boss.startAttack(11, 1);
-        this.boss.cdTaunt = 260;
+        this.boss.cdTaunt = this.boss.scaleCooldown(260);
         return true;
     }
 
@@ -220,41 +223,41 @@ public class SunkenTitanCombatGoal extends Goal {
         switch (option.state()) {
             case 1 -> {
                 if (option.variant() == 1) {
-                    this.boss.cdSlash = 26;
+                    this.boss.cdSlash = this.boss.scaleCooldown(26);
                 } else if (option.variant() == 2) {
-                    this.boss.cdCombo = 44;
+                    this.boss.cdCombo = this.boss.scaleCooldown(44);
                 } else {
-                    this.boss.cdWave = 96;
+                    this.boss.cdWave = this.boss.scaleCooldown(96);
                 }
             }
             case 2 -> {
                 if (option.variant() == 1) {
-                    this.boss.cdLeap = 82;
+                    this.boss.cdLeap = this.boss.scaleCooldown(82);
                 } else if (option.variant() == 2) {
-                    this.boss.cdEruption = 96;
+                    this.boss.cdEruption = this.boss.scaleCooldown(96);
                 } else {
-                    this.boss.cdSkyfall = 180;
+                    this.boss.cdSkyfall = this.boss.scaleCooldown(180);
                 }
             }
             case 3 -> {
                 if (option.variant() == 1) {
-                    this.boss.cdVortex = 128;
+                    this.boss.cdVortex = this.boss.scaleCooldown(128);
                 } else if (option.variant() == 2) {
-                    this.boss.cdRepulsion = 112;
+                    this.boss.cdRepulsion = this.boss.scaleCooldown(112);
                 } else {
-                    this.boss.cdPrison = 185;
+                    this.boss.cdPrison = this.boss.scaleCooldown(185);
                 }
             }
             case 4 -> {
                 if (option.variant() == 1) {
-                    this.boss.cdHook = 136;
+                    this.boss.cdHook = this.boss.scaleCooldown(136);
                 } else if (option.variant() == 2) {
-                    this.boss.cdBreath = 142;
+                    this.boss.cdBreath = this.boss.scaleCooldown(142);
                 } else {
-                    this.boss.cdRay = 220;
+                    this.boss.cdRay = this.boss.scaleCooldown(220);
                 }
             }
-            case 5 -> this.boss.cdDash = 94;
+            case 5 -> this.boss.cdDash = this.boss.scaleCooldown(94);
             default -> {
             }
         }
@@ -504,12 +507,26 @@ public class SunkenTitanCombatGoal extends Goal {
 
     private int adjustBasicScore(int score, int state, int variant) {
         score += this.followUpBonus(state, variant);
+        if (this.boss.isPhaseTwoActive()) {
+            if (state == 5 || state == 2 || state == 3) {
+                score += 8;
+            } else if (state == 4) {
+                score += 5;
+            }
+        }
         score -= this.repetitionPenalty(state, variant);
         return score;
     }
 
     private int adjustEpicScore(int score, int state, int variant) {
         score += this.followUpBonus(state, variant);
+        if (this.boss.isPhaseTwoActive()) {
+            score += switch (state) {
+                case 6, 7, 10 -> 14;
+                case 8, 9 -> 10;
+                default -> 6;
+            };
+        }
         if (this.boss.lastAttackStateUsed == state && this.boss.lastAttackVariantUsed == variant) {
             score -= 18;
         }

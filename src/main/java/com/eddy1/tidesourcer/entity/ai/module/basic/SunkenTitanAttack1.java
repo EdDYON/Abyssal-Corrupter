@@ -1,5 +1,6 @@
 package com.eddy1.tidesourcer.entity.ai.module.basic;
 
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
 import net.minecraft.server.level.ServerLevel;
@@ -54,7 +55,7 @@ public class SunkenTitanAttack1 {
                     AABB hitBox = new AABB(path.x - 0.5, path.y - 0.5, path.z - 0.5, path.x + 0.5, path.y + 0.5, path.z + 0.5);
                     List<LivingEntity> hits = sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != boss && e.isAlive());
                     for (LivingEntity e : hits) {
-                        e.hurt(boss.damageSources().magic(), 12.0F);
+                        e.hurt(boss.damageSources().magic(), AbyssalConfig.scaledDamage(12.0F));
                         e.addEffect(new MobEffectInstance(MobEffects.WITHER, 40, 0, false, false, false));
                     }
                 }
@@ -76,7 +77,7 @@ public class SunkenTitanAttack1 {
             if (useDefaultDamage) {
                 boss.doHurtTarget(hitTarget);
             } else {
-                hitTarget.hurt(boss.damageSources().mobAttack(boss), 8.0F);
+                hitTarget.hurt(boss.damageSources().mobAttack(boss), AbyssalConfig.scaledDamage(8.0F));
             }
         }
     }

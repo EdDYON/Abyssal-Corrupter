@@ -1,5 +1,6 @@
 package com.eddy1.tidesourcer.entity.ai.module.epic;
 
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
@@ -49,7 +50,9 @@ public class EchoingPulseDomain {
             boss.playSound(SoundEvents.WARDEN_ROAR, 3.2F, 0.7F);
             boss.playSound(SoundEvents.WARDEN_SONIC_CHARGE, 2.2F, 0.75F);
             applyDarkFlash(boss, sl);
-            spreadCatalystFloor(boss, sl);
+            if (AbyssalConfig.COMMON.allowTerrainChanges.get()) {
+                spreadCatalystFloor(boss, sl);
+            }
         }
 
         if (boss.echoDomainCenter == null) {
@@ -59,7 +62,9 @@ public class EchoingPulseDomain {
         boss.getNavigation().stop();
         boss.setDeltaMovement(Vec3.ZERO);
         boss.hasImpulse = true;
-        raiseArenaWalls(boss, sl, Math.min(WALL_HEIGHT, Math.max(1, boss.attackTick / 2)));
+        if (AbyssalConfig.COMMON.allowTerrainChanges.get()) {
+            raiseArenaWalls(boss, sl, Math.min(WALL_HEIGHT, Math.max(1, boss.attackTick / 2)));
+        }
         renderCastingField(boss, sl);
 
         if (boss.attackTick >= 8) {
@@ -364,6 +369,9 @@ public class EchoingPulseDomain {
     }
 
     private static void replaceTrackedBlock(Map<BlockPos, BlockState> savedBlocks, ServerLevel sl, BlockPos pos, BlockState newState) {
+        if (!AbyssalConfig.COMMON.allowTerrainChanges.get()) {
+            return;
+        }
         BlockPos immutablePos = pos.immutable();
         savedBlocks.putIfAbsent(immutablePos, sl.getBlockState(immutablePos));
         sl.setBlock(immutablePos, newState, 3);

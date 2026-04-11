@@ -1,5 +1,6 @@
 package com.eddy1.tidesourcer.entity.ai.module.terrain;
 
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
 import net.minecraft.core.BlockPos;
@@ -140,7 +141,7 @@ public class AbyssalTrench {
             entity.hurtMarked = true;
 
             if (heartbeat && distance < 6.0D) {
-                entity.hurt(boss.damageSources().magic(), 10.0F);
+                entity.hurt(boss.damageSources().magic(), AbyssalConfig.scaledDamage(10.0F));
                 AbyssalEffects.spawnImpact(sl, entity.position().add(0.0D, 1.0D, 0.0D), 0.4, 0.4);
             }
         }

@@ -1,5 +1,6 @@
 package com.eddy1.tidesourcer.entity.ai.module.terrain;
 
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
@@ -139,7 +140,7 @@ public class CoralTomb {
             }
 
             boss.coralHitTicks.put(entity.getUUID(), novaTick);
-            entity.hurt(boss.damageSources().magic(), WAVE_DAMAGE);
+            entity.hurt(boss.damageSources().magic(), AbyssalConfig.scaledDamage(WAVE_DAMAGE));
             Vec3 launch = entity.position().subtract(boss.position());
             if (launch.lengthSqr() < 1.0E-4D) {
                 launch = new Vec3(0.0D, 0.0D, 1.0D);

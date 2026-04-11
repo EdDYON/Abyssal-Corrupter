@@ -1,6 +1,7 @@
 package com.eddy1.tidesourcer.event;
 
 import com.eddy1.tidesourcer.TideSourcerMod;
+import com.eddy1.tidesourcer.client.AbyssalClientEffects;
 import com.eddy1.tidesourcer.client.gui.AbyssalBossHud;
 import com.eddy1.tidesourcer.client.renderer.TideSourcerRenderer;
 import com.eddy1.tidesourcer.command.TideSourcerCommands;
@@ -14,6 +15,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -42,6 +44,11 @@ public class ModEvents {
         @SubscribeEvent
         public static void onBossBarRender(CustomizeGuiOverlayEvent.BossEventProgress event) {
             AbyssalBossHud.render(event);
+        }
+
+        @SubscribeEvent
+        public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
+            AbyssalClientEffects.onCameraAngles(event);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.eddy1.tidesourcer.entity.ai.module.epic;
 
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
@@ -221,7 +222,7 @@ public class MirageExecution {
             Vec3 dir = targetPos.subtract(start).normalize();
             AbyssalEffects.play(sl, clone.position(), SoundEvents.WARDEN_SONIC_BOOM, 1.7F, 0.9F);
             spawnSonicBoomPath(sl, start, dir, 10, 1.6D);
-            target.hurt(boss.damageSources().magic(), CLONE_SHOT_DAMAGE);
+            target.hurt(boss.damageSources().magic(), AbyssalConfig.scaledDamage(CLONE_SHOT_DAMAGE));
             AbyssalEffects.spawnImpact(sl, clone.position().add(0.0D, 1.0D, 0.0D), 0.28D, 0.28D);
             clone.discard();
         }
@@ -230,7 +231,7 @@ public class MirageExecution {
         Vec3 trueBodyDir = targetPos.subtract(trueBodyStart).normalize();
         boss.playSound(SoundEvents.WARDEN_SONIC_BOOM, 3.2F, 0.78F);
         spawnSonicBoomPath(sl, trueBodyStart, trueBodyDir, 14, 1.7D);
-        target.hurt(boss.damageSources().magic(), FINAL_SHOT_DAMAGE);
+        target.hurt(boss.damageSources().magic(), AbyssalConfig.scaledDamage(FINAL_SHOT_DAMAGE));
         boss.cleanupMirageClones();
     }
 

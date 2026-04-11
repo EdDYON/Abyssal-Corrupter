@@ -1,5 +1,6 @@
 package com.eddy1.tidesourcer.entity.ai.module.basic;
 
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
@@ -58,7 +59,7 @@ public class SunkenTitanAttack4 {
                     target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 10, 10, false, false, false));
                     target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 10, 10, false, false, false));
                     if (boss.attackTick % 10 == 0) {
-                        target.hurt(boss.damageSources().mobAttack(boss), 6.0F);
+                        target.hurt(boss.damageSources().mobAttack(boss), AbyssalConfig.scaledDamage(6.0F));
                         target.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 0, false, false, false));
                         AbyssalEffects.spawnFearBurst(sl, target.position().add(0, 1.0, 0), 0.3, 0.3);
                         boss.playSound(SoundEvents.SOUL_ESCAPE.value(), 1.0F, 1.1F);
@@ -68,7 +69,7 @@ public class SunkenTitanAttack4 {
 
             if (boss.attackTick == 75) {
                 if (boss.distanceToSqr(target) <= 400.0D) {
-                    target.hurt(boss.damageSources().mobAttack(boss), 22.0F);
+                    target.hurt(boss.damageSources().mobAttack(boss), AbyssalConfig.scaledDamage(22.0F));
                     boss.playSound(SoundEvents.WARDEN_ATTACK_IMPACT, 2.0F, 0.8F);
                     boss.playSound(SoundEvents.GENERIC_EXPLODE.value(), 1.15F, 0.82F);
                     AbyssalEffects.spawnImpact(sl, target.position().add(0, 1.0, 0), 0.8, 0.8);
@@ -181,7 +182,7 @@ public class SunkenTitanAttack4 {
         }
 
         for (LivingEntity hit : hits) {
-            hit.hurt(boss.damageSources().magic(), RAY_DAMAGE);
+            hit.hurt(boss.damageSources().magic(), AbyssalConfig.scaledDamage(RAY_DAMAGE));
             hit.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 12, 1, false, false, false));
             Vec3 push = direction.scale(0.22D);
             hit.setDeltaMovement(hit.getDeltaMovement().add(push.x, 0.02D, push.z));

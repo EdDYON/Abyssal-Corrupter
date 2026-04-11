@@ -1,5 +1,6 @@
 package com.eddy1.tidesourcer.entity.ai.module.basic;
 
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.custom.TideSourcerEntity;
 import net.minecraft.server.level.ServerLevel;
@@ -54,7 +55,7 @@ public class SunkenTitanAttack2 {
                 List<LivingEntity> targets = sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != boss && e.isAlive());
                 for (LivingEntity e : targets) {
                     if (e.distanceToSqr(boss.getX(), e.getY(), boss.getZ()) <= 16.0D) {
-                        e.hurt(boss.damageSources().mobAttack(boss), 22.0F);
+                        e.hurt(boss.damageSources().mobAttack(boss), AbyssalConfig.scaledDamage(22.0F));
                         e.addEffect(new MobEffectInstance(MobEffects.WITHER, 80, 0, false, false, false));
                         e.setDeltaMovement(e.getDeltaMovement().add(0, 0.6D, 0));
                         e.hasImpulse = true;
@@ -101,7 +102,7 @@ public class SunkenTitanAttack2 {
                 AABB hitBox = new AABB(boss.geyserX - 2.5, boss.geyserY - 1.0, boss.geyserZ - 2.5, boss.geyserX + 2.5, boss.geyserY + 4.0, boss.geyserZ + 2.5);
                 List<LivingEntity> targets = sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != boss && e.isAlive());
                 for (LivingEntity e : targets) {
-                    e.hurt(boss.damageSources().mobAttack(boss), 18.0F);
+                    e.hurt(boss.damageSources().mobAttack(boss), AbyssalConfig.scaledDamage(18.0F));
                     e.setDeltaMovement(e.getDeltaMovement().add(0, 1.2D, 0));
                     e.hasImpulse = true;
                 }
@@ -141,7 +142,7 @@ public class SunkenTitanAttack2 {
                     double dist = Math.sqrt(e.distanceToSqr(boss));
                     float damage = (float) (36.0D - dist);
                     if (damage > 0) {
-                        e.hurt(boss.damageSources().mobAttack(boss), damage);
+                        e.hurt(boss.damageSources().mobAttack(boss), AbyssalConfig.scaledDamage(damage));
                         e.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 1, false, false, false));
                         Vec3 push = e.position().subtract(boss.position()).normalize().scale(1.5D);
                         e.setDeltaMovement(push.x, 0.8D, push.z);

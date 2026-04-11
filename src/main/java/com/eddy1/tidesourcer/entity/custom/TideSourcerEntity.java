@@ -1,5 +1,6 @@
 package com.eddy1.tidesourcer.entity.custom;
 
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.entity.ai.AbyssalEffects;
 import com.eddy1.tidesourcer.entity.ai.SunkenTitanCombatGoal;
 import com.eddy1.tidesourcer.entity.ai.SunkenTitanCombatManager;
@@ -11,6 +12,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -60,6 +64,11 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     public static final int FOLLOW_UP_CHASE = 2;
     public static final int FOLLOW_UP_RANGED = 3;
     public static final int FOLLOW_UP_EXECUTE = 4;
+
+    private static final EntityDataAccessor<Integer> DATA_ATTACK_STATE = SynchedEntityData.defineId(TideSourcerEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_ATTACK_TICK = SynchedEntityData.defineId(TideSourcerEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_PHASE_TWO = SynchedEntityData.defineId(TideSourcerEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_ENTRANCE_TICKS = SynchedEntityData.defineId(TideSourcerEntity.class, EntityDataSerializers.INT);
 
     private static final Set<TideSourcerEntity> ACTIVE_INSTANCES = Collections.newSetFromMap(new WeakHashMap<>());
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -153,24 +162,25 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     public boolean phase70 = false;
     public boolean phase60 = false;
     public int pendingPhaseEpic = 0;
+    private int entranceTicks = 0;
 
     public TideSourcerEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
         ACTIVE_INSTANCES.add(this);
-        this.cdDash = 20;
-        this.cdRay = 60;
-        this.cdSkyfall = 80;
-        this.cdMirage = 100;
-        this.cdArmory = 160;
-        this.cdNova = 120;
-        this.cdSingularity = 140;
+        this.cdDash = this.scaleCooldown(20);
+        this.cdRay = this.scaleCooldown(60);
+        this.cdSkyfall = this.scaleCooldown(80);
+        this.cdMirage = this.scaleCooldown(100);
+        this.cdArmory = this.scaleCooldown(160);
+        this.cdNova = this.scaleCooldown(120);
+        this.cdSingularity = this.scaleCooldown(140);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, 1800.0D)
+                .add(Attributes.MAX_HEALTH, AbyssalConfig.scaledHealth(1800.0D))
                 .add(Attributes.MOVEMENT_SPEED, 0.30D)
-                .add(Attributes.ATTACK_DAMAGE, 32.0D)
+                .add(Attributes.ATTACK_DAMAGE, AbyssalConfig.scaledDamage(32.0F))
                 .add(Attributes.ATTACK_KNOCKBACK, 3.0D)
                 .add(Attributes.FOLLOW_RANGE, 80.0D)
                 .add(Attributes.ARMOR, 14.0D)
@@ -190,15 +200,34 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     }
 
     @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_ATTACK_STATE, 0);
+        builder.define(DATA_ATTACK_TICK, 0);
+        builder.define(DATA_PHASE_TWO, false);
+        builder.define(DATA_ENTRANCE_TICKS, 0);
+    }
+
+    @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putBoolean("IsClone", this.isClone);
+        compound.putInt("EntranceTicks", this.entranceTicks);
+        compound.putBoolean("Phase60", this.phase60);
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         this.isClone = compound.getBoolean("IsClone");
+        this.entranceTicks = compound.getInt("EntranceTicks");
+        this.phase60 = compound.getBoolean("Phase60");
+        if (this.phase60) {
+            this.phase70 = true;
+            this.phase80 = true;
+            this.phase90 = true;
+        }
+        this.syncCombatData();
     }
 
     @Override
@@ -221,6 +250,12 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
             return;
         }
 
+        if (this.entranceTicks > 0) {
+            this.tickEntrance((ServerLevel) this.level());
+            this.syncCombatData();
+            return;
+        }
+
         if (!this.isClone && this.hasTemporaryEncounterState() && this.isEncounterTargetInvalid()) {
             this.interruptEncounter();
         }
@@ -233,6 +268,7 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
             if (this.tickCount % 3 == 0) {
                 AbyssalEffects.spawnInfectionCloud((ServerLevel) this.level(), this.position().add(0.0D, 1.0D, 0.0D), 0.12D, 0.25D);
             }
+            this.syncCombatData();
             return;
         }
 
@@ -285,6 +321,7 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
                     this.startEpicAttack(nextEpic);
                 }
             }
+            this.syncCombatData();
             return;
         }
 
@@ -308,6 +345,7 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
             this.attackTick++;
             SunkenTitanCombatManager.handleAttacks(this);
         }
+        this.syncCombatData();
     }
 
     public void forceRestoreBlocks() {
@@ -360,6 +398,9 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         this.setInvisible(false);
         this.attackState = 0;
         this.attackTick = 0;
+        this.entranceTicks = 0;
+        this.setInvulnerable(false);
+        this.syncCombatData();
         this.getNavigation().stop();
     }
 
@@ -538,7 +579,7 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (this.attackState == 100) {
+        if (this.attackState == 100 || this.entranceTicks > 0) {
             return false;
         }
         if (source.is(DamageTypeTags.IS_FIRE) || source.is(DamageTypes.FALL) || source.is(DamageTypes.IN_WALL)) {
@@ -609,6 +650,7 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         this.attackState = state;
         this.attackVariant = variant;
         this.attackTick = 0;
+        this.syncCombatData();
 
         SunkenTitanSpeechManager.announceSkill(this, state, variant);
         this.triggerAttackAnimation(state, variant);
@@ -616,13 +658,13 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
 
     public void startEpicAttack(int state) {
         this.startAttack(state, 1);
-        this.cdGlobalEpic = 420;
+        this.cdGlobalEpic = this.scaleCooldown(420);
         switch (state) {
-            case 6 -> this.cdDomain = 1450;
-            case 7 -> this.cdMirage = 980;
-            case 8 -> this.cdArmory = 1120;
-            case 9 -> this.cdNova = 820;
-            case 10 -> this.cdSingularity = 960;
+            case 6 -> this.cdDomain = this.scaleCooldown(1450);
+            case 7 -> this.cdMirage = this.scaleCooldown(980);
+            case 8 -> this.cdArmory = this.scaleCooldown(1120);
+            case 9 -> this.cdNova = this.scaleCooldown(820);
+            case 10 -> this.cdSingularity = this.scaleCooldown(960);
             default -> {
             }
         }
@@ -632,11 +674,49 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         if (this.manualTestMode) {
             this.attackState = 0;
             this.attackTick = 0;
+            this.syncCombatData();
             return;
         }
         this.applyFollowUpFromFinishedAttack(this.attackState, this.attackVariant);
         this.attackState = 0;
         this.attackTick = 0;
+        this.syncCombatData();
+    }
+
+    public int scaleCooldown(int baseCooldown) {
+        return AbyssalConfig.scaledCooldown(baseCooldown, this.isPhaseTwoActive());
+    }
+
+    public void beginEntrance(int ticks) {
+        this.entranceTicks = Math.max(0, ticks);
+        if (this.entranceTicks > 0) {
+            this.attackState = 0;
+            this.attackTick = 0;
+            this.getNavigation().stop();
+            this.setDeltaMovement(Vec3.ZERO);
+            this.setInvulnerable(true);
+        }
+        this.syncCombatData();
+    }
+
+    public boolean isPhaseTwoActive() {
+        return this.phase60 || this.getHealth() <= this.getMaxHealth() * 0.60F;
+    }
+
+    public int getSyncedAttackState() {
+        return this.level().isClientSide() ? this.entityData.get(DATA_ATTACK_STATE) : this.attackState;
+    }
+
+    public int getSyncedAttackTick() {
+        return this.level().isClientSide() ? this.entityData.get(DATA_ATTACK_TICK) : this.attackTick;
+    }
+
+    public boolean isSyncedPhaseTwo() {
+        return this.level().isClientSide() ? this.entityData.get(DATA_PHASE_TWO) : this.isPhaseTwoActive();
+    }
+
+    public int getSyncedEntranceTicks() {
+        return this.level().isClientSide() ? this.entityData.get(DATA_ENTRANCE_TICKS) : this.entranceTicks;
     }
 
     @Override
@@ -861,6 +941,50 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         this.pursuitRecoveryCooldown = 0;
         this.pursuitStuckTicks = 0;
         this.lastPursuitSamplePos = null;
+    }
+
+    private void tickEntrance(ServerLevel sl) {
+        int totalTicks = Math.max(1, AbyssalConfig.COMMON.entranceInvulnerableTicks.get());
+        int elapsed = Math.max(0, totalTicks - this.entranceTicks);
+        Vec3 center = this.position().add(0.0D, 1.1D, 0.0D);
+
+        this.getNavigation().stop();
+        this.setDeltaMovement(Vec3.ZERO);
+        this.hasImpulse = true;
+        this.setInvulnerable(true);
+
+        if (elapsed == 0) {
+            this.playSound(SoundEvents.SCULK_SHRIEKER_SHRIEK, 2.5F, 0.55F);
+            this.playSound(SoundEvents.WARDEN_HEARTBEAT, 2.4F, 0.62F);
+        }
+        if (elapsed == totalTicks / 2) {
+            this.playSound(SoundEvents.ELDER_GUARDIAN_CURSE, 2.1F, 0.58F);
+        }
+
+        if (AbyssalConfig.shouldEmitDetailParticle(sl.getGameTime(), 2)) {
+            double radius = 1.2D + elapsed * 0.035D;
+            AbyssalEffects.spawnInfectionCloud(sl, center, radius, 0.45D);
+            AbyssalEffects.spawnCharge(sl, center.add(0.0D, 0.7D, 0.0D), 0.35D + radius * 0.2D, 0.55D);
+        }
+
+        this.entranceTicks--;
+        if (this.entranceTicks <= 0) {
+            this.entranceTicks = 0;
+            this.setInvulnerable(false);
+            this.playSound(SoundEvents.WARDEN_ROAR, 3.0F, 0.72F);
+            this.playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 3.2F, 0.58F);
+            AbyssalEffects.spawnImpact(sl, center, 1.8D, 0.85D);
+        }
+    }
+
+    private void syncCombatData() {
+        if (this.level().isClientSide()) {
+            return;
+        }
+        this.entityData.set(DATA_ATTACK_STATE, this.attackState);
+        this.entityData.set(DATA_ATTACK_TICK, this.attackTick);
+        this.entityData.set(DATA_PHASE_TWO, this.isPhaseTwoActive());
+        this.entityData.set(DATA_ENTRANCE_TICKS, this.entranceTicks);
     }
 
     private static int updateCombatCounter(int current, boolean active, int gain, int decay, int cap) {
