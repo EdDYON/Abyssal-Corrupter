@@ -1,5 +1,6 @@
 {
   "entity.abyssal_corrupter.abyssal_corrupter": "深渊侵蚀者",
+  "itemGroup.abyssal_corrupter.abyssal_corrupter": "深渊侵蚀者",
   "item.abyssal_corrupter.abyssal_corrupter_spawn_egg": "深渊侵蚀者之卵",
   "advancement.abyssal_corrupter.defeat_abyssal_corrupter.title": "深渊止息",
   "advancement.abyssal_corrupter.defeat_abyssal_corrupter.description": "击败深渊侵蚀者。",
@@ -26,9 +27,9 @@
   "chat.abyssal_corrupter.skill.phase_transition.2": "<深渊侵蚀者> 很好。愤怒会让侵蚀更深。",
   "chat.abyssal_corrupter.skill.phase_transition.3": "<深渊侵蚀者> 封印正在裂开，深渊正借我降临。",
   "chat.abyssal_corrupter.skill.phase_transition.4": "<深渊侵蚀者> 现在，你终于看见会吞噬世界的那一面了。",
-  "block.abyssal_corrupter.abyssal_summoning_altar": "??????",
-  "message.abyssal_corrupter.altar.already_summoning": "?????????",
-  "message.abyssal_corrupter.altar.cooldown": "???????",
-  "message.abyssal_corrupter.altar.boss_nearby": "??????????????",
-  "message.abyssal_corrupter.altar.needs_catalyst": "???????????"
+  "block.abyssal_corrupter.abyssal_summoning_altar": "深渊召唤祭坛",
+  "message.abyssal_corrupter.altar.already_summoning": "深渊正在开启……",
+  "message.abyssal_corrupter.altar.cooldown": "祭坛仍在冷却。",
+  "message.abyssal_corrupter.altar.boss_nearby": "附近已经有一名深渊侵蚀者。",
+  "message.abyssal_corrupter.altar.needs_catalyst": "祭坛需要一个回响碎片。"
 }

@@ -3,14 +3,13 @@ package com.eddy1.tidesourcer;
 import com.eddy1.tidesourcer.config.AbyssalConfig;
 import com.eddy1.tidesourcer.init.BlockEntityInit;
 import com.eddy1.tidesourcer.init.BlockInit;
+import com.eddy1.tidesourcer.init.CreativeTabInit;
 import com.eddy1.tidesourcer.init.EntityInit;
 import com.eddy1.tidesourcer.init.ItemInit;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
 @Mod(TideSourcerMod.MOD_ID)
 public class TideSourcerMod {
@@ -24,16 +23,6 @@ public class TideSourcerMod {
         BlockEntityInit.BLOCK_ENTITY_TYPES.register(modEventBus);
         EntityInit.ENTITY_TYPES.register(modEventBus);
         ItemInit.ITEMS.register(modEventBus);
-
-        modEventBus.addListener(this::addCreative);
-    }
-
-    private void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
-            event.accept(ItemInit.ABYSSAL_CORRUPTER_SPAWN_EGG.get());
-        }
-        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
-            event.accept(ItemInit.ABYSSAL_SUMMONING_ALTAR.get());
-        }
+        CreativeTabInit.CREATIVE_MODE_TABS.register(modEventBus);
     }
 }

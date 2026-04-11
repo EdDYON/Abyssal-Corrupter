@@ -1,5 +1,6 @@
 {
   "entity.abyssal_corrupter.abyssal_corrupter": "Abyssal Corrupter",
+  "itemGroup.abyssal_corrupter.abyssal_corrupter": "Abyssal Corrupter",
   "item.abyssal_corrupter.abyssal_corrupter_spawn_egg": "Abyssal Corrupter Vessel",
   "advancement.abyssal_corrupter.defeat_abyssal_corrupter.title": "The Abyss Falls Silent",
   "advancement.abyssal_corrupter.defeat_abyssal_corrupter.description": "Defeat the Abyssal Corrupter.",

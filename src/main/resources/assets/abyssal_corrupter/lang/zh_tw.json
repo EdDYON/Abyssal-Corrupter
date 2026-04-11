@@ -1,5 +1,6 @@
 {
   "entity.abyssal_corrupter.abyssal_corrupter": "深淵侵蝕者",
+  "itemGroup.abyssal_corrupter.abyssal_corrupter": "深淵侵蝕者",
   "item.abyssal_corrupter.abyssal_corrupter_spawn_egg": "深淵侵蝕者之卵",
   "advancement.abyssal_corrupter.defeat_abyssal_corrupter.title": "深淵止息",
   "advancement.abyssal_corrupter.defeat_abyssal_corrupter.description": "擊敗深淵侵蝕者。",
@@ -26,9 +27,9 @@
   "chat.abyssal_corrupter.skill.phase_transition.2": "<深淵侵蝕者> 很好。憤怒會讓侵蝕更深。",
   "chat.abyssal_corrupter.skill.phase_transition.3": "<深淵侵蝕者> 封印正在裂開，深淵正藉我降臨。",
   "chat.abyssal_corrupter.skill.phase_transition.4": "<深淵侵蝕者> 現在，你終於看見會吞噬世界的那一面了。",
-  "block.abyssal_corrupter.abyssal_summoning_altar": "??????",
-  "message.abyssal_corrupter.altar.already_summoning": "?????????",
-  "message.abyssal_corrupter.altar.cooldown": "???????",
-  "message.abyssal_corrupter.altar.boss_nearby": "??????????????",
-  "message.abyssal_corrupter.altar.needs_catalyst": "???????????"
+  "block.abyssal_corrupter.abyssal_summoning_altar": "深淵召喚祭壇",
+  "message.abyssal_corrupter.altar.already_summoning": "深淵正在開啟……",
+  "message.abyssal_corrupter.altar.cooldown": "祭壇仍在冷卻。",
+  "message.abyssal_corrupter.altar.boss_nearby": "附近已經有一名深淵侵蝕者。",
+  "message.abyssal_corrupter.altar.needs_catalyst": "祭壇需要一個回聲碎片。"
 }
