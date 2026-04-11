@@ -27,6 +27,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -59,6 +60,9 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 
 public class TideSourcerEntity extends Monster implements GeoEntity {
+    private static final double BASE_MAX_HEALTH = 1800.0D;
+    private static final double BASE_ATTACK_DAMAGE = 32.0D;
+
     public static final int FOLLOW_UP_NONE = 0;
     public static final int FOLLOW_UP_CLOSE = 1;
     public static final int FOLLOW_UP_CHASE = 2;
@@ -163,6 +167,7 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     public boolean phase60 = false;
     public int pendingPhaseEpic = 0;
     private int entranceTicks = 0;
+    private boolean configAttributesApplied = false;
 
     public TideSourcerEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
@@ -178,9 +183,9 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, AbyssalConfig.scaledHealth(1800.0D))
+                .add(Attributes.MAX_HEALTH, BASE_MAX_HEALTH)
                 .add(Attributes.MOVEMENT_SPEED, 0.30D)
-                .add(Attributes.ATTACK_DAMAGE, AbyssalConfig.scaledDamage(32.0F))
+                .add(Attributes.ATTACK_DAMAGE, BASE_ATTACK_DAMAGE)
                 .add(Attributes.ATTACK_KNOCKBACK, 3.0D)
                 .add(Attributes.FOLLOW_RANGE, 80.0D)
                 .add(Attributes.ARMOR, 14.0D)
@@ -249,6 +254,8 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         if (this.level().isClientSide()) {
             return;
         }
+
+        this.applyConfiguredAttributes();
 
         if (this.entranceTicks > 0) {
             this.tickEntrance((ServerLevel) this.level());
@@ -983,6 +990,44 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
             this.playSound(SoundEvents.LIGHTNING_BOLT_THUNDER, 3.2F, 0.58F);
             AbyssalEffects.spawnImpact(sl, center, 1.8D, 0.85D);
         }
+    }
+
+    private void applyConfiguredAttributes() {
+        if (this.configAttributesApplied) {
+            return;
+        }
+
+        double scaledMaxHealth;
+        double scaledAttackDamage;
+        try {
+            scaledMaxHealth = AbyssalConfig.scaledHealth(BASE_MAX_HEALTH);
+            scaledAttackDamage = AbyssalConfig.scaledDamage((float) BASE_ATTACK_DAMAGE);
+        } catch (IllegalStateException ignored) {
+            return;
+        }
+
+        AttributeInstance maxHealth = this.getAttribute(Attributes.MAX_HEALTH);
+        if (maxHealth != null) {
+            double previousMaxHealth = Math.max(1.0D, this.getMaxHealth());
+            float healthRatio = this.getHealth() / (float) previousMaxHealth;
+            boolean wasFullHealth = this.getHealth() >= previousMaxHealth - 0.01D;
+            maxHealth.setBaseValue(scaledMaxHealth);
+            if (!this.isDeadOrDying()) {
+                if (wasFullHealth || this.tickCount <= 1) {
+                    this.setHealth(this.getMaxHealth());
+                } else {
+                    float adjustedHealth = (float) (this.getMaxHealth() * Math.max(0.05F, Math.min(1.0F, healthRatio)));
+                    this.setHealth(adjustedHealth);
+                }
+            }
+        }
+
+        AttributeInstance attackDamage = this.getAttribute(Attributes.ATTACK_DAMAGE);
+        if (attackDamage != null) {
+            attackDamage.setBaseValue(scaledAttackDamage);
+        }
+
+        this.configAttributesApplied = true;
     }
 
     private void syncCombatData() {
