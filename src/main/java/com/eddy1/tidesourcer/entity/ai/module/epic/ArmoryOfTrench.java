@@ -30,6 +30,9 @@ public class ArmoryOfTrench {
             Vec3 lookDir = boss.getLookAngle().normalize();
             Vec3 right = lookDir.cross(new Vec3(0, 1, 0)).normalize();
             Vec3 center = boss.position().add(0, 2.5, 0).subtract(lookDir.scale(2.5));
+            if (boss.attackTick % 8 == 2) {
+                AbyssalEffects.spawnRangedCharge(sl, center, lookDir, 10.0D);
+            }
 
             for (int i = 0; i < 8; i++) {
                 double angle = sl.random.nextDouble() * Math.PI;

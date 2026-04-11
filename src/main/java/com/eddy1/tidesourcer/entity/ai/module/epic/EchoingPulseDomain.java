@@ -71,6 +71,10 @@ public class EchoingPulseDomain {
             boss.setInvisible(true);
         }
 
+        if (boss.attackTick % 4 == 0 && boss.echoDomainCenter != null) {
+            AbyssalEffects.spawnControlMist(sl, boss.echoDomainCenter.add(0.0D, 1.0D, 0.0D), 2.2D, 0.55D);
+        }
+
         if (boss.attackTick >= CAST_TICKS) {
             boss.echoDomainActiveTick = ACTIVE_TICKS;
             boss.setInvisible(true);

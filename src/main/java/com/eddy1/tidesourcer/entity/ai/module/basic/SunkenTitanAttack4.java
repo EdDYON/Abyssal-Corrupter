@@ -63,6 +63,8 @@ public class SunkenTitanAttack4 {
                         target.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 0, false, false, false));
                         AbyssalEffects.spawnFearBurst(sl, target.position().add(0, 1.0, 0), 0.3, 0.3);
                         boss.playSound(SoundEvents.SOUL_ESCAPE.value(), 1.0F, 1.1F);
+                    } else if (boss.attackTick % 6 == 0) {
+                        AbyssalEffects.spawnControlMist(sl, target.position().add(0, 0.8, 0), 0.55D, 0.7D);
                     }
                 }
             }
@@ -86,6 +88,7 @@ public class SunkenTitanAttack4 {
             if (boss.attackTick == 20) {
                 boss.playSound(SoundEvents.WITHER_SHOOT, 2.0F, 0.5F);
                 Vec3 dir = boss.getLookAngle().normalize();
+                AbyssalEffects.spawnRangedCharge(sl, boss.position().add(0.0D, 1.6D, 0.0D), dir, 15.0D);
                 for (int i = 1; i <= 15; i++) {
                     double px = boss.getX() + dir.x * i;
                     double py = boss.getY() + 1.5;
@@ -120,6 +123,10 @@ public class SunkenTitanAttack4 {
             }
             if (boss.attackTick >= 1 && boss.attackTick < RAY_CHARGE_TICKS && target != null && target.isAlive()) {
                 trackRayTarget(boss, target, 4.0F, 2.5F);
+                if (boss.attackTick % 3 == 0) {
+                    Vec3 direction = boss.getLookAngle().normalize();
+                    AbyssalEffects.spawnRangedCharge(sl, boss.position().add(0.0D, 2.3D, 0.0D).add(direction.scale(1.2D)), direction, RAY_RANGE);
+                }
             }
             if (boss.attackTick == RAY_CHARGE_TICKS) {
                 boss.playSound(SoundEvents.WARDEN_SONIC_BOOM, 3.2F, 0.86F);

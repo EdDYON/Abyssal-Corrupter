@@ -50,6 +50,9 @@ public class SunkenTitanAttack2 {
                     }
                 }
             }
+            if (boss.attackTick >= 26 && boss.attackTick < 35 && boss.attackTick % 3 == 2) {
+                AbyssalEffects.spawnGroundCrackTelegraph(sl, boss.position().add(0.0D, 0.05D, 0.0D), 4.0D, boss.attackTick - 26, 9);
+            }
             if (boss.attackTick == 35) {
                 AABB hitBox = boss.getBoundingBox().inflate(4.0D, 0.5D, 4.0D).move(0, -0.5, 0);
                 List<LivingEntity> targets = sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != boss && e.isAlive());
@@ -70,6 +73,7 @@ public class SunkenTitanAttack2 {
                     AbyssalEffects.spawnRiftPillar(sl, px, boss.getY() + 0.2, pz);
                 }
                 AbyssalEffects.spawnImpact(sl, boss.position().add(0, 0.1, 0), 1.0, 0.3);
+                AbyssalEffects.spawnAftershock(sl, boss.position().add(0, 0.05, 0), 5.2D);
             }
             if (boss.attackTick >= 60) boss.resetAttack();
         } else if (boss.attackVariant == 2) {
@@ -90,6 +94,9 @@ public class SunkenTitanAttack2 {
             }
             if (boss.attackTick >= 15 && boss.attackTick < 35) {
                 AbyssalEffects.spawnInfectionCloud(sl, new Vec3(boss.geyserX, boss.geyserY + 0.5, boss.geyserZ), 1.0, 0.3);
+                if (boss.attackTick % 4 == 1) {
+                    AbyssalEffects.spawnGroundCrackTelegraph(sl, new Vec3(boss.geyserX, boss.geyserY + 0.05D, boss.geyserZ), 2.8D, boss.attackTick - 15, 20);
+                }
             }
             if (boss.attackTick == 35) {
                 boss.playSound(SoundEvents.WARDEN_ATTACK_IMPACT, 2.0F, 0.8F);
@@ -123,6 +130,9 @@ public class SunkenTitanAttack2 {
             if (boss.attackTick >= 10 && boss.attackTick < 50) {
                 AbyssalEffects.spawnInfectionCloud(sl, new Vec3(boss.geyserX, boss.geyserY + 0.2, boss.geyserZ), 3.0, 0.2);
                 AbyssalEffects.spawnCharge(sl, new Vec3(boss.geyserX, boss.geyserY + 0.2, boss.geyserZ), 3.0, 0.2);
+                if (boss.attackTick % 5 == 0) {
+                    AbyssalEffects.spawnGroundCrackTelegraph(sl, new Vec3(boss.geyserX, boss.geyserY + 0.05D, boss.geyserZ), 9.5D, boss.attackTick - 10, 40);
+                }
             }
             if (boss.attackTick == 50) {
                 boss.teleportTo(boss.geyserX, boss.geyserY + 0.5, boss.geyserZ);
@@ -135,6 +145,7 @@ public class SunkenTitanAttack2 {
                     AbyssalEffects.spawnFearBurst(sl, new Vec3(px, boss.getY() + 0.5, pz), 0.5, 2.0);
                 }
                 AbyssalEffects.spawnImpact(sl, boss.position().add(0, 1.0, 0), 2.0, 1.0);
+                AbyssalEffects.spawnAftershock(sl, boss.position().add(0, 0.05, 0), 10.0D);
 
                 AABB hitBox = boss.getBoundingBox().inflate(10.0D);
                 List<LivingEntity> targets = sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != boss && e.isAlive());

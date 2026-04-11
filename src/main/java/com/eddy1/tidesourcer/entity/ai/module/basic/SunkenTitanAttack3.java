@@ -30,6 +30,9 @@ public class SunkenTitanAttack3 {
                         AbyssalEffects.spawnCharge(sl, new Vec3(px, boss.getY() + 1.0, pz), 0.2, 0.5);
                     }
                 }
+                if (boss.attackTick % 6 == 3) {
+                    AbyssalEffects.spawnControlMist(sl, boss.position().add(0.0D, 1.0D, 0.0D), 2.0D, 0.8D);
+                }
                 AABB pullBox = boss.getBoundingBox().inflate(12.0D);
                 List<LivingEntity> targets = sl.getEntitiesOfClass(LivingEntity.class, pullBox, e -> e != boss && e.isAlive());
                 for (LivingEntity e : targets) {
@@ -58,6 +61,7 @@ public class SunkenTitanAttack3 {
             }
             if (boss.attackTick >= 6 && boss.attackTick < 20 && boss.attackTick % 4 == 2) {
                 renderRepulsionTelegraph(sl, center, boss.attackTick);
+                AbyssalEffects.spawnGroundCrackTelegraph(sl, center, 6.5D, boss.attackTick - 6, 14);
                 if (boss.attackTick == 14) {
                     boss.playSound(SoundEvents.WARDEN_HEARTBEAT, 1.6F, 0.74F);
                 }
@@ -100,6 +104,9 @@ public class SunkenTitanAttack3 {
                 Vec3 targetPos = target.position().add(0, 1.0, 0);
                 AbyssalEffects.spawnInfectionCloud(sl, targetPos, 1.5, 1.5);
                 AbyssalEffects.spawnFearBurst(sl, targetPos, 1.2, 1.2);
+                if (boss.attackTick % 5 == 0) {
+                    AbyssalEffects.spawnControlMist(sl, targetPos, 0.85D, 1.1D);
+                }
             }
             if (boss.attackTick == 75 && target != null) {
                 boss.playSound(SoundEvents.WARDEN_ATTACK_IMPACT, 2.0F, 0.8F);

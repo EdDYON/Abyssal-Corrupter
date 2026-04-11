@@ -48,6 +48,9 @@ public class CoralTomb {
         if (boss.attackTick <= CHARGE_TICKS) {
             renderChestPulse(boss, sl);
             renderShrinkingWarning(target, sl, boss.attackTick);
+            if (boss.attackTick % 5 == 0) {
+                AbyssalEffects.spawnGroundCrackTelegraph(sl, SkillCastHelper.groundCenter(boss, sl, 1.5D), 5.5D, boss.attackTick, CHARGE_TICKS);
+            }
             playChargeAudio(boss, sl);
             return;
         }

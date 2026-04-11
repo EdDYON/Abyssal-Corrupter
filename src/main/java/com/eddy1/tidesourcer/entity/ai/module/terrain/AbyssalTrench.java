@@ -45,6 +45,9 @@ public class AbyssalTrench {
         boss.setDeltaMovement(Vec3.ZERO);
         boss.hasImpulse = true;
 
+        if (boss.attackTick % 5 == 0) {
+            AbyssalEffects.spawnControlMist(sl, boss.singularityPos, 1.2D, 0.8D);
+        }
         renderChargingRift(boss, sl);
 
         if (boss.attackTick == CAST_TICKS) {

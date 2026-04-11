@@ -16,6 +16,9 @@ import java.util.List;
 public class SunkenTitanAttack1 {
     public static void handle(TideSourcerEntity boss, ServerLevel sl) {
         if (boss.attackVariant == 1) {
+            if (boss.attackTick >= 6 && boss.attackTick < 15 && boss.attackTick % 3 == 0) {
+                AbyssalEffects.spawnMeleeTelegraph(sl, boss.position(), boss.getLookAngle(), 2.7D, 1.0D);
+            }
             if (boss.attackTick == 15) {
                 performPreciseStrike(boss, 3.0, 0.5, true);
                 boss.playSound(SoundEvents.WARDEN_ATTACK_IMPACT, 1.2F, 0.8F);
@@ -24,6 +27,9 @@ public class SunkenTitanAttack1 {
             }
             if (boss.attackTick >= 30) boss.resetAttack();
         } else if (boss.attackVariant == 2) {
+            if (boss.attackTick >= 4 && boss.attackTick < 30 && boss.attackTick % 5 == 4) {
+                AbyssalEffects.spawnMeleeTelegraph(sl, boss.position(), boss.getLookAngle(), 3.6D, 1.45D);
+            }
             if (boss.attackTick >= 10 && boss.attackTick <= 30 && boss.attackTick % 5 == 0) {
                 performPreciseStrike(boss, 4.5, 0.2, false);
                 boss.playSound(SoundEvents.WITHER_SHOOT, 1.4F, 0.9F + (sl.random.nextFloat() * 0.25F));
@@ -44,6 +50,12 @@ public class SunkenTitanAttack1 {
             }
             if (boss.attackTick >= 10 && boss.attackTick < 30) {
                 AbyssalEffects.spawnCharge(sl, boss.position().add(0, 3.0, 0), 2.0, 0.5);
+                LivingEntity targetForCharge = boss.getTarget();
+                if (targetForCharge != null && boss.attackTick % 4 == 0) {
+                    Vec3 startPos = boss.position().add(0, 3.0, 0);
+                    Vec3 dir = targetForCharge.position().add(0, targetForCharge.getBbHeight() / 2.0, 0).subtract(startPos).normalize();
+                    AbyssalEffects.spawnRangedCharge(sl, startPos, dir, 12.0D);
+                }
             }
             if (boss.attackTick >= 30 && boss.attackTick <= 50 && boss.attackTick % 5 == 0 && target != null) {
                 boss.playSound(SoundEvents.WARDEN_SONIC_BOOM, 2.0F, 1.1F);
