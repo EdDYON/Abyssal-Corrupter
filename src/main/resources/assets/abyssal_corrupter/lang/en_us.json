@@ -1,37 +1,34 @@
 {
   "entity.abyssal_corrupter.abyssal_corrupter": "Abyssal Corrupter",
   "item.abyssal_corrupter.abyssal_corrupter_spawn_egg": "Abyssal Corrupter Vessel",
-
   "advancement.abyssal_corrupter.defeat_abyssal_corrupter.title": "The Abyss Falls Silent",
   "advancement.abyssal_corrupter.defeat_abyssal_corrupter.description": "Defeat the Abyssal Corrupter.",
-
   "chat.abyssal_corrupter.skill.basic.1": "<Abyssal Corrupter> Let the abyss gnaw through you.",
   "chat.abyssal_corrupter.skill.basic.2": "<Abyssal Corrupter> Every struggle feeds the infection.",
   "chat.abyssal_corrupter.skill.basic.3": "<Abyssal Corrupter> Too slow. Decay has already taken root.",
   "chat.abyssal_corrupter.skill.basic.4": "<Abyssal Corrupter> Kneel. I will erode what remains.",
-
   "chat.abyssal_corrupter.skill.echo_pulse.1": "<Abyssal Corrupter> Domain: Echoing Pulse. Every sound you make betrays you.",
   "chat.abyssal_corrupter.skill.echo_pulse.2": "<Abyssal Corrupter> Hide your steps if you can. The red echo already knows your fear.",
   "chat.abyssal_corrupter.skill.echo_pulse.3": "<Abyssal Corrupter> Crouch, hold your breath, pray... this graveyard still hears the living.",
-
   "chat.abyssal_corrupter.skill.mirage.1": "<Abyssal Corrupter> Count the shells if you like. The scream begins when your choice fails.",
   "chat.abyssal_corrupter.skill.mirage.2": "<Abyssal Corrupter> Miss the true flesh, and every shadow answers at once.",
   "chat.abyssal_corrupter.skill.mirage.3": "<Abyssal Corrupter> Three heartbeats. Find me, or drown in the blast.",
-
   "chat.abyssal_corrupter.skill.armory.1": "<Abyssal Corrupter> Abyssal armory. I will nail you to the field.",
   "chat.abyssal_corrupter.skill.armory.2": "<Abyssal Corrupter> Watch the deep open its arsenal.",
   "chat.abyssal_corrupter.skill.armory.3": "<Abyssal Corrupter> No shelter. No reprieve. Only execution.",
-
   "chat.abyssal_corrupter.skill.coral.1": "<Abyssal Corrupter> Sonic Nova. Find the seam between endings.",
   "chat.abyssal_corrupter.skill.coral.2": "<Abyssal Corrupter> Hear the pulse in my chest? That is your warning.",
   "chat.abyssal_corrupter.skill.coral.3": "<Abyssal Corrupter> When the scream blooms, hesitation dies first.",
-
   "chat.abyssal_corrupter.skill.trench.1": "<Abyssal Corrupter> Resonance Singularity. Come closer and be unmade.",
   "chat.abyssal_corrupter.skill.trench.2": "<Abyssal Corrupter> Even your arrows will bend their knees to my heart.",
   "chat.abyssal_corrupter.skill.trench.3": "<Abyssal Corrupter> Struggle all you want. Gravity serves the abyss.",
-
   "chat.abyssal_corrupter.skill.phase_transition.1": "<Abyssal Corrupter> You have only scraped the surface of what festers below.",
   "chat.abyssal_corrupter.skill.phase_transition.2": "<Abyssal Corrupter> Good. Rage sharpens the corruption.",
   "chat.abyssal_corrupter.skill.phase_transition.3": "<Abyssal Corrupter> The seal cracks. The abyss comes through me.",
-  "chat.abyssal_corrupter.skill.phase_transition.4": "<Abyssal Corrupter> Now you face the part that devours worlds."
+  "chat.abyssal_corrupter.skill.phase_transition.4": "<Abyssal Corrupter> Now you face the part that devours worlds.",
+  "block.abyssal_corrupter.abyssal_summoning_altar": "Abyssal Summoning Altar",
+  "message.abyssal_corrupter.altar.already_summoning": "The abyss is already opening...",
+  "message.abyssal_corrupter.altar.cooldown": "The altar is still cooling.",
+  "message.abyssal_corrupter.altar.boss_nearby": "Another Abyssal Corrupter is already nearby.",
+  "message.abyssal_corrupter.altar.needs_catalyst": "The altar demands an Echo Shard."
 }

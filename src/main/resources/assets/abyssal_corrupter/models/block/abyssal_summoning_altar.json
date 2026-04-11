@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "abyssal_corrupter:block/abyssal_summoning_altar_side",
+    "side": "abyssal_corrupter:block/abyssal_summoning_altar_side",
+    "top": "abyssal_corrupter:block/abyssal_summoning_altar_top",
+    "particle": "abyssal_corrupter:block/abyssal_summoning_altar_side"
+  }
+}

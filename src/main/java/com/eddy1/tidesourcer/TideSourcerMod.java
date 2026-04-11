@@ -1,6 +1,8 @@
 package com.eddy1.tidesourcer;
 
 import com.eddy1.tidesourcer.config.AbyssalConfig;
+import com.eddy1.tidesourcer.init.BlockEntityInit;
+import com.eddy1.tidesourcer.init.BlockInit;
 import com.eddy1.tidesourcer.init.EntityInit;
 import com.eddy1.tidesourcer.init.ItemInit;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -18,6 +20,8 @@ public class TideSourcerMod {
         modContainer.registerConfig(ModConfig.Type.COMMON, AbyssalConfig.COMMON_SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, AbyssalConfig.CLIENT_SPEC);
 
+        BlockInit.BLOCKS.register(modEventBus);
+        BlockEntityInit.BLOCK_ENTITY_TYPES.register(modEventBus);
         EntityInit.ENTITY_TYPES.register(modEventBus);
         ItemInit.ITEMS.register(modEventBus);
 
@@ -27,6 +31,9 @@ public class TideSourcerMod {
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
             event.accept(ItemInit.ABYSSAL_CORRUPTER_SPAWN_EGG.get());
+        }
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(ItemInit.ABYSSAL_SUMMONING_ALTAR.get());
         }
     }
 }
