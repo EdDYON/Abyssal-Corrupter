@@ -1,6 +1,7 @@
 package com.eddy1.tidesourcer.client.gui;
 
 import com.eddy1.tidesourcer.TideSourcerMod;
+import com.eddy1.tidesourcer.config.AbyssalConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.LerpingBossEvent;
@@ -56,27 +57,38 @@ public final class AbyssalBossHud {
         float progress = Mth.clamp(bossEvent.getProgress(), 0.0F, 1.0F);
         int progressWidth = Mth.floor(progress * BAR_WIDTH);
         float danger = 1.0F - progress;
+        boolean phaseTwo = progress <= 0.60F && AbyssalConfig.CLIENT.phaseTwoHudTint.get();
         float pulse = 0.52F + 0.48F * (float)Math.sin(animTime * (0.11F + danger * 0.05F));
         int coreX = frameX + CORE_X_OFFSET;
         int coreY = frameY + CORE_Y_OFFSET + Mth.floor((float)Math.sin(animTime * 0.07F) * (0.7F + danger * 0.35F));
 
         guiGraphics.blit(BACKGROUND_TEXTURE, frameX, frameY, 0.0F, 0.0F, FRAME_WIDTH, FRAME_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT);
         renderBarBreath(guiGraphics, barX, barY, pulse, danger);
+        if (phaseTwo) {
+            renderPhaseTwoFrame(guiGraphics, frameX, frameY, pulse, danger);
+        }
 
         if (progressWidth > 0) {
             guiGraphics.blit(PROGRESS_TEXTURE, barX, barY, progressWidth, BAR_HEIGHT, 0.0F, 0.0F, progressWidth, BAR_HEIGHT, BAR_WIDTH, BAR_HEIGHT);
             renderFlow(guiGraphics, barX, barY, progressWidth, animTime, danger);
             renderCorruptionTint(guiGraphics, barX, barY, progressWidth, pulse, danger);
+            if (phaseTwo) {
+                renderPhaseTwoBlood(guiGraphics, barX, barY, progressWidth, pulse);
+            }
             renderFrontEdge(guiGraphics, barX + progressWidth - 1, barY, pulse, danger);
         }
 
         renderCoreAura(guiGraphics, coreX + CORE_WIDTH / 2, coreY + CORE_HEIGHT / 2, pulse, danger);
         guiGraphics.blit(CORE_TEXTURE, coreX, coreY, 0.0F, 0.0F, CORE_WIDTH, CORE_HEIGHT, CORE_WIDTH, CORE_HEIGHT);
+        if (phaseTwo) {
+            guiGraphics.fill(coreX + 7, coreY + 3, coreX + 13, coreY + 10, argb(22 + Mth.floor(18 * pulse), 188, 34, 58));
+        }
 
         int titleX = frameX + FRAME_WIDTH / 2;
         int titleY = Math.max(1, vanillaBarY - 9);
+        int titleColor = phaseTwo ? 0xF3C0C0 : TITLE_COLOR;
         guiGraphics.drawCenteredString(Minecraft.getInstance().font, bossEvent.getName(), titleX, titleY + 1, TITLE_SHADOW);
-        guiGraphics.drawCenteredString(Minecraft.getInstance().font, bossEvent.getName(), titleX, titleY, TITLE_COLOR);
+        guiGraphics.drawCenteredString(Minecraft.getInstance().font, bossEvent.getName(), titleX, titleY, titleColor);
     }
 
     private static void renderBarBreath(GuiGraphics guiGraphics, int barX, int barY, float pulse, float danger) {
@@ -132,6 +144,26 @@ public final class AbyssalBossHud {
         );
         guiGraphics.fill(edgeX - 1, barY - 1, edgeX + 2, barY + BAR_HEIGHT + 1, outer);
         guiGraphics.fill(edgeX, barY, edgeX + 1, barY + BAR_HEIGHT, inner);
+    }
+
+    private static void renderPhaseTwoFrame(GuiGraphics guiGraphics, int frameX, int frameY, float pulse, float danger) {
+        int vein = argb(16 + Mth.floor(18 * pulse), 168, 24, 48);
+        int shadow = argb(18 + Mth.floor(12 * danger), 30, 4, 9);
+        for (int x = frameX + 26; x < frameX + FRAME_WIDTH - 24; x += 32) {
+            guiGraphics.fill(x, frameY + 5, x + 2, frameY + 8, vein);
+            guiGraphics.fill(x + 2, frameY + 8, x + 4, frameY + 10, shadow);
+            guiGraphics.fill(x + 4, frameY + 10, x + 5, frameY + 14, vein);
+        }
+        guiGraphics.fill(frameX + 12, frameY + FRAME_HEIGHT - 3, frameX + FRAME_WIDTH - 12, frameY + FRAME_HEIGHT - 2, shadow);
+    }
+
+    private static void renderPhaseTwoBlood(GuiGraphics guiGraphics, int barX, int barY, int progressWidth, float pulse) {
+        int red = argb(22 + Mth.floor(20 * pulse), 196, 38, 58);
+        int darkRed = argb(28 + Mth.floor(16 * pulse), 76, 8, 18);
+        for (int x = barX + 10; x < barX + progressWidth - 4; x += 18) {
+            guiGraphics.fill(x, barY, x + 2, barY + BAR_HEIGHT, red);
+            guiGraphics.fill(x + 2, barY + 2, x + 5, barY + BAR_HEIGHT, darkRed);
+        }
     }
 
     private static void renderCoreAura(GuiGraphics guiGraphics, int centerX, int centerY, float pulse, float danger) {

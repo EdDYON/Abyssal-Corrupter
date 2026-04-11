@@ -631,6 +631,14 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         super.customServerAiStep();
         if (!this.isClone) {
             this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
+            this.bossEvent.setColor(this.isPhaseTwoActive() ? BossEvent.BossBarColor.RED : BossEvent.BossBarColor.BLUE);
+            this.bossEvent.setOverlay(this.isPhaseTwoActive() ? BossEvent.BossBarOverlay.NOTCHED_10 : BossEvent.BossBarOverlay.NOTCHED_6);
+            if (this.isPhaseTwoActive() && this.tickCount % 80 == 0) {
+                this.playSound(SoundEvents.WARDEN_HEARTBEAT, 1.9F, 0.52F);
+                if (this.level() instanceof ServerLevel sl) {
+                    AbyssalEffects.spawnControlMist(sl, this.position().add(0.0D, 1.0D, 0.0D), 0.75D, 0.55D);
+                }
+            }
             if (this.level() instanceof ServerLevel sl) {
                 this.tryRecoverLostTarget(sl);
             }
