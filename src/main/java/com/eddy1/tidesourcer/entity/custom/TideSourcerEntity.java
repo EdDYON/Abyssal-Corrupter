@@ -8,6 +8,7 @@ import com.eddy1.tidesourcer.entity.ai.SunkenTitanSpeechManager;
 import com.eddy1.tidesourcer.entity.ai.module.SkillCastHelper;
 import com.eddy1.tidesourcer.entity.ai.module.epic.EchoingPulseDomain;
 import com.eddy1.tidesourcer.entity.ai.module.terrain.AbyssalTrench;
+import com.eddy1.tidesourcer.world.AbyssalRitualSite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -25,6 +26,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -36,11 +38,13 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -62,6 +66,10 @@ import java.util.WeakHashMap;
 public class TideSourcerEntity extends Monster implements GeoEntity {
     private static final double BASE_MAX_HEALTH = 1800.0D;
     private static final double BASE_ATTACK_DAMAGE = 32.0D;
+    private static final int RITUAL_DISENGAGE_HEAL_DELAY = 140;
+    private static final int RITUAL_DROP_CLEAR_INTERVAL = 40;
+    private static final double RITUAL_HARD_ESCAPE_MARGIN = 6.0D;
+    private static final double RITUAL_EDGE_RECOVERY_INSET = 8.0D;
 
     public static final int FOLLOW_UP_NONE = 0;
     public static final int FOLLOW_UP_CLOSE = 1;
@@ -168,6 +176,11 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     public int pendingPhaseEpic = 0;
     private int entranceTicks = 0;
     private boolean configAttributesApplied = false;
+    private AbyssalRitualSite summoningRitualSite = null;
+    private BlockPos summoningRitualCenter = null;
+    private int summoningRitualRadius = 0;
+    private int ritualReturnCooldown = 0;
+    private int ritualDisengagedTicks = 0;
 
     public TideSourcerEntity(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
@@ -249,7 +262,19 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     }
 
     @Override
+    public void setTarget(LivingEntity target) {
+        if (target != null && this.isBoundToSummoningRitual() && !this.isInsideSummoningRitual(target.position(), 0.0D)) {
+            super.setTarget(null);
+            return;
+        }
+        super.setTarget(target);
+    }
+
+    @Override
     public void tick() {
+        if (!this.level().isClientSide() && !this.isClone) {
+            this.limitRitualMovementBeforeTick();
+        }
         super.tick();
         if (this.level().isClientSide()) {
             return;
@@ -285,6 +310,12 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         if (this.pursuitAssistCooldown > 0) {
             this.pursuitAssistCooldown--;
         }
+        if (this.ritualReturnCooldown > 0) {
+            this.ritualReturnCooldown--;
+        }
+        if (this.isBoundToSummoningRitual() && this.tickCount % RITUAL_DROP_CLEAR_INTERVAL == 0) {
+            this.clearRitualDrops((ServerLevel) this.level());
+        }
 
         if (this.echoDomainConfusionTick > 0) {
             this.echoDomainConfusionTick--;
@@ -302,6 +333,11 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
             if (this.level() instanceof ServerLevel sl) {
                 AbyssalTrench.tickActiveTrench(this, sl);
             }
+        }
+
+        if (this.enforceSummoningRitualBounds((ServerLevel) this.level())) {
+            this.syncCombatData();
+            return;
         }
 
         if (this.attackState == 100) {
@@ -352,6 +388,10 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
             this.attackTick++;
             SunkenTitanCombatManager.handleAttacks(this);
         }
+        if (this.enforceSummoningRitualBounds((ServerLevel) this.level())) {
+            this.syncCombatData();
+            return;
+        }
         this.syncCombatData();
     }
 
@@ -362,6 +402,205 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
             }
             this.savedEchoDomainBlocks.clear();
         }
+    }
+
+    public void claimSummoningRitual(AbyssalRitualSite ritualSite) {
+        if (ritualSite != null && !ritualSite.isEmpty()) {
+            this.summoningRitualSite = ritualSite;
+            this.summoningRitualCenter = ritualSite.center();
+            this.summoningRitualRadius = ritualSite.radius();
+        }
+    }
+
+    public void restoreSummoningRitual() {
+        if (this.summoningRitualSite != null && this.level() instanceof ServerLevel sl) {
+            int restoredRadius = this.summoningRitualRadius;
+            this.summoningRitualSite.restore(sl);
+            this.summoningRitualSite = null;
+            this.summoningRitualCenter = null;
+            this.summoningRitualRadius = 0;
+            this.ritualDisengagedTicks = 0;
+            AbyssalEffects.spawnAftershock(sl, this.position().add(0.0D, 0.2D, 0.0D), Math.max(30.0D, restoredRadius));
+            this.playSound(SoundEvents.BEACON_DEACTIVATE, 2.2F, 0.55F);
+        }
+    }
+
+    private boolean enforceSummoningRitualBounds(ServerLevel sl) {
+        if (!this.isBoundToSummoningRitual() || this.isDeadOrDying()) {
+            return false;
+        }
+
+        if (!this.isInsideSummoningRitual(this.position(), RITUAL_HARD_ESCAPE_MARGIN)) {
+            this.interruptEncounter();
+            this.setHealth(this.getMaxHealth());
+            this.returnToSummoningRitualCenter(sl, true);
+            return true;
+        }
+
+        if (!this.isInsideSummoningRitual(this.position(), 0.0D)) {
+            this.interruptEncounter();
+            this.returnToNearestRitualInterior(sl);
+            return true;
+        }
+
+        if (!this.isInsideSummoningRitual(this.position().add(this.getDeltaMovement()), -0.5D)) {
+            this.getNavigation().stop();
+            this.setDeltaMovement(Vec3.ZERO);
+            this.hasImpulse = true;
+            this.hurtMarked = true;
+        }
+
+        LivingEntity target = this.getTarget();
+        if (target != null && !this.isInsideSummoningRitual(target.position(), 0.0D)) {
+            this.ritualDisengagedTicks = 0;
+            this.setTarget(null);
+            this.interruptEncounter();
+            this.setTarget(null);
+            this.getNavigation().stop();
+            this.setDeltaMovement(Vec3.ZERO);
+            return true;
+        }
+
+        if (target == null) {
+            this.tickRitualDisengagedHealing(sl);
+        } else {
+            this.ritualDisengagedTicks = 0;
+        }
+
+        return false;
+    }
+
+    private void tickRitualDisengagedHealing(ServerLevel sl) {
+        this.ritualDisengagedTicks++;
+        if (this.ritualDisengagedTicks == RITUAL_DISENGAGE_HEAL_DELAY) {
+            this.interruptEncounter();
+            this.getNavigation().stop();
+            this.setDeltaMovement(Vec3.ZERO);
+            AbyssalEffects.spawnControlMist(sl, this.position().add(0.0D, 1.0D, 0.0D), 0.9D, 0.6D);
+            this.playSound(SoundEvents.WARDEN_HEARTBEAT, 1.8F, 0.48F);
+        }
+        if (this.ritualDisengagedTicks >= RITUAL_DISENGAGE_HEAL_DELAY && this.tickCount % 20 == 0) {
+            float amount = Math.max(40.0F, this.getMaxHealth() * 0.04F);
+            this.heal(amount);
+            if (this.tickCount % 40 == 0) {
+                AbyssalEffects.spawnInfectionCloud(sl, this.position().add(0.0D, 1.0D, 0.0D), 0.8D, 0.45D);
+            }
+        }
+    }
+
+    private void limitRitualMovementBeforeTick() {
+        if (!this.isBoundToSummoningRitual()) {
+            return;
+        }
+
+        Vec3 movement = this.getDeltaMovement();
+        if (movement.lengthSqr() <= 1.0E-6D || this.isInsideSummoningRitual(this.position().add(movement), -0.5D)) {
+            return;
+        }
+
+        this.getNavigation().stop();
+        this.setDeltaMovement(Vec3.ZERO);
+        this.hasImpulse = true;
+        this.hurtMarked = true;
+    }
+
+    private boolean isBoundToSummoningRitual() {
+        return this.summoningRitualCenter != null && this.summoningRitualRadius > 0;
+    }
+
+    private void clearRitualDrops(ServerLevel sl) {
+        if (!this.isBoundToSummoningRitual()) {
+            return;
+        }
+
+        double radius = this.summoningRitualRadius + 2.0D;
+        double radiusSquared = radius * radius;
+        AABB area = new AABB(this.summoningRitualCenter).inflate(radius, 48.0D, radius);
+        Vec3 center = Vec3.atCenterOf(this.summoningRitualCenter);
+        for (ItemEntity itemEntity : sl.getEntitiesOfClass(ItemEntity.class, area)) {
+            if (this.ritualHorizontalDistanceSquared(center, itemEntity.position()) <= radiusSquared) {
+                itemEntity.discard();
+            }
+        }
+        for (ExperienceOrb orb : sl.getEntitiesOfClass(ExperienceOrb.class, area)) {
+            if (this.ritualHorizontalDistanceSquared(center, orb.position()) <= radiusSquared) {
+                orb.discard();
+            }
+        }
+    }
+
+    private double ritualHorizontalDistanceSquared(Vec3 center, Vec3 pos) {
+        double dx = pos.x - center.x;
+        double dz = pos.z - center.z;
+        return dx * dx + dz * dz;
+    }
+
+    private void returnToSummoningRitualCenter(ServerLevel sl, boolean escapedTarget) {
+        Vec3 destination = this.findSummoningRitualCenter(sl);
+        this.getNavigation().stop();
+        this.setDeltaMovement(Vec3.ZERO);
+        this.teleportTo(destination.x, destination.y, destination.z);
+        this.hasImpulse = true;
+        this.hurtMarked = true;
+
+        if (this.ritualReturnCooldown <= 0) {
+            AbyssalEffects.spawnInfectionCloud(sl, destination.add(0.0D, 1.0D, 0.0D), escapedTarget ? 2.6D : 1.6D, 0.85D);
+            AbyssalEffects.spawnAftershock(sl, destination.add(0.0D, 0.2D, 0.0D), escapedTarget ? 8.0D : 4.0D);
+            this.playSound(escapedTarget ? SoundEvents.WARDEN_HEARTBEAT : SoundEvents.ENDERMAN_TELEPORT, 2.2F, escapedTarget ? 0.48F : 0.62F);
+            this.ritualReturnCooldown = 40;
+        }
+    }
+
+    private void returnToNearestRitualInterior(ServerLevel sl) {
+        Vec3 destination = this.findNearestRitualInterior(sl);
+        this.getNavigation().stop();
+        this.setDeltaMovement(Vec3.ZERO);
+        this.teleportTo(destination.x, destination.y, destination.z);
+        this.hasImpulse = true;
+        this.hurtMarked = true;
+
+        if (this.ritualReturnCooldown <= 0) {
+            AbyssalEffects.spawnControlMist(sl, destination.add(0.0D, 1.0D, 0.0D), 0.55D, 0.35D);
+            this.playSound(SoundEvents.SCULK_SHRIEKER_HIT, 1.4F, 0.55F);
+            this.ritualReturnCooldown = 30;
+        }
+    }
+
+    private Vec3 findSummoningRitualCenter(ServerLevel sl) {
+        Vec3 center = Vec3.atCenterOf(this.summoningRitualCenter).add(0.0D, 1.0D, 0.0D);
+        Vec3 standable = SkillCastHelper.findStandablePosition(this, sl, center.x, center.y, center.z, 8);
+        return standable == null ? center : standable;
+    }
+
+    private Vec3 findNearestRitualInterior(ServerLevel sl) {
+        Vec3 center = Vec3.atCenterOf(this.summoningRitualCenter);
+        Vec3 current = this.position();
+        double dx = current.x - center.x;
+        double dz = current.z - center.z;
+        double distance = Math.sqrt(dx * dx + dz * dz);
+        double safeRadius = Math.max(4.0D, this.summoningRitualRadius - RITUAL_EDGE_RECOVERY_INSET);
+        if (distance < 1.0E-4D) {
+            return this.findSummoningRitualCenter(sl);
+        }
+
+        double scale = Math.min(distance, safeRadius) / distance;
+        double x = center.x + dx * scale;
+        double z = center.z + dz * scale;
+        Vec3 standable = SkillCastHelper.findStandablePosition(this, sl, x, current.y, z, 8);
+        return standable == null ? this.findSummoningRitualCenter(sl) : standable;
+    }
+
+    private boolean isInsideSummoningRitual(Vec3 position, double margin) {
+        double radius = this.summoningRitualRadius + margin;
+        return this.summoningRitualDistanceSqr(position) <= radius * radius;
+    }
+
+    private double summoningRitualDistanceSqr(Vec3 position) {
+        double centerX = this.summoningRitualCenter.getX() + 0.5D;
+        double centerZ = this.summoningRitualCenter.getZ() + 0.5D;
+        double dx = position.x - centerX;
+        double dz = position.z - centerZ;
+        return dx * dx + dz * dz;
     }
 
     public boolean hasPersistentEpicActive() {
@@ -564,15 +803,23 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     public void die(DamageSource damageSource) {
         if (!this.level().isClientSide()) {
             this.triggerAnim("attack_controller", "death");
+            this.dropAbyssalVictoryRewards(damageSource);
         }
         this.interruptEncounter();
         super.die(damageSource);
+    }
+
+    protected void dropAbyssalVictoryRewards(DamageSource damageSource) {
+        // Reward hook intentionally left empty until the release drop table is finalized.
     }
 
     @Override
     protected void tickDeath() {
         if (!this.level().isClientSide() && !this.isClone && this.level() instanceof ServerLevel sl) {
             this.spawnAbyssalDeathEffect(sl);
+            if (this.deathTime >= 18) {
+                this.restoreSummoningRitual();
+            }
         }
         super.tickDeath();
     }
@@ -581,6 +828,9 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
     public void remove(RemovalReason reason) {
         ACTIVE_INSTANCES.remove(this);
         this.interruptEncounter();
+        if (!this.isClone) {
+            this.restoreSummoningRitual();
+        }
         super.remove(reason);
     }
 
@@ -807,6 +1057,11 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
             this.resetPursuitRecoveryState();
             return;
         }
+        if (this.isBoundToSummoningRitual() && !this.isInsideSummoningRitual(target.position(), 0.0D)) {
+            this.setTarget(null);
+            this.resetPursuitRecoveryState();
+            return;
+        }
 
         double distanceSqr = this.distanceToSqr(target);
         double verticalGap = Math.abs(target.getY() - this.getY());
@@ -834,7 +1089,7 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         }
 
         Vec3 recoveryAnchor = this.findRecoveryAnchor(sl, target);
-        if (recoveryAnchor == null) {
+        if (recoveryAnchor == null || (this.isBoundToSummoningRitual() && !this.isInsideSummoningRitual(recoveryAnchor, -1.0D))) {
             return;
         }
 
@@ -882,6 +1137,9 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
         double horizontalSpeed = upwardChase ? 0.95D : 1.20D;
         double verticalSpeed = upwardChase ? 0.72D : 0.16D;
         Vec3 assistVelocity = forward.scale(horizontalSpeed).add(0.0D, verticalSpeed, 0.0D);
+        if (this.isBoundToSummoningRitual() && !this.isInsideSummoningRitual(this.position().add(assistVelocity), -1.0D)) {
+            return false;
+        }
 
         this.getNavigation().stop();
         this.setDeltaMovement(assistVelocity);
@@ -942,7 +1200,9 @@ public class TideSourcerEntity extends Monster implements GeoEntity {
                 double x = target.getX() + Math.cos(angle) * radius;
                 double z = target.getZ() + Math.sin(angle) * radius;
                 Vec3 candidate = SkillCastHelper.findStandablePosition(this, sl, x, target.getY(), z, 8);
-                if (candidate != null && candidate.distanceToSqr(target.position()) >= 12.25D) {
+                if (candidate != null
+                        && candidate.distanceToSqr(target.position()) >= 12.25D
+                        && (!this.isBoundToSummoningRitual() || this.isInsideSummoningRitual(candidate, -1.0D))) {
                     return candidate;
                 }
             }

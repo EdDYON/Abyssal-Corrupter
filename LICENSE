@@ -1,27 +1,36 @@
-Abyssal Corrupter License Notice
+Abyssal Corrupter - Repository License Notice
 
 Copyright (c) EdDYON
 
-This repository contains original content by EdDYON and third-party model assets
-that keep their own terms.
+This repository contains original Abyssal Corrupter project content by EdDYON
+and third-party model assets that keep their own terms.
 
 1. Original project content
 
-Unless a file or notice explicitly says otherwise, the original source code,
-combat design, balance logic, dialogue, configuration, textures, UI assets,
-and other original project content in this repository remain under EdDYON's own
-license / release-page terms.
+Unless a file or a separate written notice explicitly says otherwise, the
+original source code, gameplay logic, combat design, configuration, dialogue,
+language files, original textures, UI assets, generated resources, and other
+original project content are owned by EdDYON.
 
-This repository notice is meant to preserve that ownership and scope. It does
-not replace any separate agreement, storefront page, blog notice, or release
-statement published by EdDYON for the original Abyssal Corrupter project.
+This is a custom license notice. It is meant to preserve EdDYON's ownership and
+release-page terms. It is not an open-source license grant by itself.
+
+Without separate permission from EdDYON, do not:
+- sell this project or modified versions of it;
+- re-upload or redistribute this project as someone else's work;
+- claim authorship of EdDYON's original code, design, UI, text, or assets;
+- remove or hide this license notice when distributing an authorized copy.
+
+Use in personal worlds or servers, screenshots, videos, and normal gameplay
+showcases should follow EdDYON's published release-page terms.
 
 2. Third-party assets
 
 Some imported model assets are not original EdDYON content. Those assets remain
 subject to the terms published by their original author.
 
-See:
+Bundled jar notices:
+- src/main/resources/META-INF/LICENSE.txt
 - src/main/resources/META-INF/THIRD_PARTY_ASSET_NOTICES.txt
 
 3. Scope separation
@@ -29,3 +38,4 @@ See:
 Third-party asset terms only apply to the third-party assets they describe.
 They do not relicense, override, or weaken EdDYON's rights over the rest of
 this project.
+

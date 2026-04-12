@@ -1,89 +1,78 @@
 # 深渊侵蚀者 / Abyssal Corrupter
 
-一个单 Boss 模组，内容基本都围着深渊侵蚀者本体展开。
+## 环境需求
 
-现在外部命名已经统一成：
-- `modid`: `abyssal_corrupter`
-- 实体 ID: `abyssal_corrupter:abyssal_corrupter`
-- 测试命令: `/abyssal_corrupter`
+- Minecraft: `1.21.1`
+- NeoForge: `21.1.65` 或兼容版本
+- Java: `21`
+- GeckoLib: `4.6.6`
 
-代码里的类名还保留 `TideSourcer*` 这套旧前缀，只是历史命名，不影响运行。
+## 游戏内使用
 
-## 环境
+创造模式物品栏中包含：
 
-- Minecraft `1.21.1`
-- NeoForge `21.1.65`
-- Java `21`
-- GeckoLib `4.6.6`
+- 深渊召唤祭坛
+- 深渊侵蚀者刷怪蛋
 
-常用命令：
+推荐正式体验使用“深渊召唤祭坛”。刷怪蛋主要用于创造模式测试。
 
-```powershell
-.\gradlew.bat runClient
-.\gradlew.bat build
-.\gradlew.bat --no-configuration-cache compileJava
-```
-
-## 快速测试
-
-先开创造模式，并且保证自己有命令权限。
+常用测试命令需要管理员权限，并且通常用于创造模式调试：
 
 ```mcfunction
 /summon abyssal_corrupter:abyssal_corrupter ~ ~ ~
 /abyssal_corrupter test list
-/abyssal_corrupter test ray
-/abyssal_corrupter test domain
-/abyssal_corrupter test state 9 1
+/abyssal_corrupter test state <state> <variant>
+/abyssal_corrupter test cooldowns
 /abyssal_corrupter test stop
 ```
 
-常用子命令：
-- `list` 看技能别名
-- `state <state> <variant>` 精确点招
-- `cooldowns` 清冷却
-- `stop` 退出手动测试模式
+## 配置
 
-## 主要文件
+模组注册了 common/client 配置。可调项目包括：
 
-- `src/main/java/com/eddy1/TideSourcer/TideSourcerMod.java`
-  模组入口。
-- `src/main/java/com/eddy1/TideSourcer/entity/custom/TideSourcerEntity.java`
-  Boss 本体，血条、阶段、状态、动画和死亡特效都在这里。
-- `src/main/java/com/eddy1/TideSourcer/entity/ai/SunkenTitanCombatGoal.java`
-  AI 选招逻辑。
-- `src/main/java/com/eddy1/TideSourcer/entity/ai/SunkenTitanCombatManager.java`
-  技能调度和冷却推进。
-- `src/main/java/com/eddy1/TideSourcer/command/TideSourcerCommands.java`
-  测试命令。
-- `src/main/resources/assets/abyssal_corrupter`
-  动画、模型、贴图、语言文件。
+- Boss 血量倍率
+- Boss 伤害倍率
+- 技能冷却倍率
+- 二阶段冷却倍率
+- 是否允许地形改变
+- 粒子质量：`OFF` / `LOW` / `NORMAL` / `HIGH`
+- 屏幕震动开关与强度
+- 祭坛召唤时间
+- 祭坛冷却
+- 祭坛是否消耗材料
+- 祭坛半径
+- Boss 入场无敌时间
 
-## 想改东西
+如果服务器觉得 Boss 太难、太晃或粒子太多，优先改配置，不需要重新打包。
 
-想改数值：
-- 看 `TideSourcerEntity.createAttributes()`
-- 看各技能模块里的伤害和冷却
+## 开发入口
 
-想改动画：
-- 先看 `assets/abyssal_corrupter/animations/abyssal_corrupter.animation.json`
-- 再看 `TideSourcerEntity.registerControllers(...)`
-- 最后看 `TideSourcerEntity.triggerAttackAnimation(...)`
+主要代码位置：
 
-想改台词：
-- `SunkenTitanSpeechManager.java`
-- `assets/abyssal_corrupter/lang/en_us.json`
-- `assets/abyssal_corrupter/lang/zh_cn.json`
-- `assets/abyssal_corrupter/lang/zh_tw.json`
+- `src/main/java/com/eddy1/tidesourcer/TideSourcerMod.java`
+- `src/main/java/com/eddy1/tidesourcer/entity/custom/TideSourcerEntity.java`
+- `src/main/java/com/eddy1/tidesourcer/entity/ai/SunkenTitanCombatGoal.java`
+- `src/main/java/com/eddy1/tidesourcer/entity/ai/SunkenTitanCombatManager.java`
+- `src/main/java/com/eddy1/tidesourcer/block/AbyssalSummoningAltarBlock.java`
+- `src/main/java/com/eddy1/tidesourcer/block/entity/AbyssalSummoningAltarBlockEntity.java`
+- `src/main/java/com/eddy1/tidesourcer/world/AbyssalRitualSite.java`
+- `src/main/java/com/eddy1/tidesourcer/command/TideSourcerCommands.java`
 
-想改血条：
-- 先看 `TideSourcerEntity` 里的 `bossEvent`
+主要资源位置：
 
-## 备注
+- `src/main/resources/assets/abyssal_corrupter/geo`
+- `src/main/resources/assets/abyssal_corrupter/animations`
+- `src/main/resources/assets/abyssal_corrupter/textures`
+- `src/main/resources/assets/abyssal_corrupter/lang`
+- `src/main/resources/META-INF`
 
-可能不是最终版本
+## 协议与第三方资源
 
-## 授权与第三方资源
+本项目包含 EdDYON 的原创代码、玩法设计、UI、文本和部分资源，也包含第三方模型资源。两类内容的协议需要分开看：
 
-- 项目原创内容的归属和适用范围见 [LICENSE](LICENSE)
-- 打包进模组 jar 的授权文件位于 `META-INF/LICENSE.txt`
-- 打包进模组 jar 的第三方模型协议位于 `META-INF/THIRD_PARTY_ASSET_NOTICES.txt`
+- 根目录协议：`LICENSE`
+- 打包进 jar 的代码/原创内容协议：`META-INF/LICENSE.txt`
+- 打包进 jar 的第三方模型协议：`META-INF/THIRD_PARTY_ASSET_NOTICES.txt`
+
+发布 jar 时请保留 `META-INF/LICENSE.txt` 和 `META-INF/THIRD_PARTY_ASSET_NOTICES.txt`。它们会随 `src/main/resources` 一起被 Gradle 打进最终 jar。
+

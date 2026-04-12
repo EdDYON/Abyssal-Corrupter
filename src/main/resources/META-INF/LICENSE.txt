@@ -1,27 +1,34 @@
-Abyssal Corrupter License Notice
+Abyssal Corrupter - Code and Original Content License Notice
 
 Copyright (c) EdDYON
 
-This mod contains original content by EdDYON and third-party model assets
-that keep their own terms.
+This bundled notice applies to the Abyssal Corrupter mod jar.
 
 1. Original project content
 
-Unless a file or notice explicitly says otherwise, the original source code,
-combat design, balance logic, dialogue, configuration, textures, UI assets,
-and other original project content in this mod remain under EdDYON's own
-license / release-page terms.
+Unless a file or a separate written notice explicitly says otherwise, the
+original source code, gameplay logic, combat design, configuration, dialogue,
+language files, original textures, UI assets, generated resources, and other
+original project content are owned by EdDYON.
 
-This bundled notice preserves that ownership and scope. It does not replace
-any separate agreement, storefront page, blog notice, or release statement
-published by EdDYON for the original Abyssal Corrupter project.
+This is a custom license notice. It is meant to preserve EdDYON's ownership and
+release-page terms. It is not an open-source license grant by itself.
 
-2. Third-party assets
+Without separate permission from EdDYON, do not:
+- sell this mod or modified versions of it;
+- re-upload or redistribute this mod as someone else's work;
+- claim authorship of EdDYON's original code, design, UI, text, or assets;
+- remove or hide this license notice when distributing an authorized copy.
+
+Use in personal worlds or servers, screenshots, videos, and normal gameplay
+showcases should follow EdDYON's published release-page terms.
+
+2. Third-party model assets
 
 Some imported model assets are not original EdDYON content. Those assets remain
-subject to the terms published by their original author.
+under the terms of their original author.
 
-See:
+The bundled model/asset notice is here:
 - META-INF/THIRD_PARTY_ASSET_NOTICES.txt
 
 3. Scope separation
@@ -29,3 +36,4 @@ See:
 Third-party asset terms only apply to the third-party assets they describe.
 They do not relicense, override, or weaken EdDYON's rights over the rest of
 this mod.
+

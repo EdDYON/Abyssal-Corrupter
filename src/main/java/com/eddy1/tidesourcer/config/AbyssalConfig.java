@@ -80,6 +80,8 @@ public final class AbyssalConfig {
         public final ModConfigSpec.IntValue altarSummonTicks;
         public final ModConfigSpec.IntValue altarCooldownTicks;
         public final ModConfigSpec.BooleanValue altarConsumesCatalyst;
+        public final ModConfigSpec.BooleanValue altarBuildsRitualSite;
+        public final ModConfigSpec.IntValue altarRitualRadius;
         public final ModConfigSpec.IntValue entranceInvulnerableTicks;
 
         private Common(ModConfigSpec.Builder builder) {
@@ -117,6 +119,12 @@ public final class AbyssalConfig {
             altarConsumesCatalyst = builder
                     .comment("If true, survival players must spend an echo shard to activate the altar.")
                     .define("altarConsumesCatalyst", false);
+            altarBuildsRitualSite = builder
+                    .comment("If true and terrain changes are allowed, activating the altar builds a small abyssal ritual site around it.")
+                    .define("altarBuildsRitualSite", true);
+            altarRitualRadius = builder
+                    .comment("Radius of the generated abyssal ritual site around the altar.")
+                    .defineInRange("altarRitualRadius", 60, 60, 96);
             entranceInvulnerableTicks = builder
                     .comment("Short invulnerable entrance time applied after altar summoning.")
                     .defineInRange("entranceInvulnerableTicks", 80, 0, 200);

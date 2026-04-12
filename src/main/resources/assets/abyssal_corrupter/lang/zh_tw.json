@@ -31,5 +31,11 @@
   "message.abyssal_corrupter.altar.already_summoning": "深淵正在開啟……",
   "message.abyssal_corrupter.altar.cooldown": "祭壇仍在冷卻。",
   "message.abyssal_corrupter.altar.boss_nearby": "附近已經有一名深淵侵蝕者。",
-  "message.abyssal_corrupter.altar.needs_catalyst": "祭壇需要一個回聲碎片。"
+  "message.abyssal_corrupter.altar.needs_catalyst": "祭壇需要一個回聲碎片。",
+  "title.abyssal_corrupter.ritual.opening.title": "深淵審判場展開",
+  "title.abyssal_corrupter.ritual.opening.subtitle": "祭壇將這片大地烙成戰場。",
+  "title.abyssal_corrupter.ritual.seal.title": "深處無路可逃",
+  "title.abyssal_corrupter.ritual.seal.subtitle": "侵蝕者無法離場，深淵會把它拖回中心。",
+  "title.abyssal_corrupter.ritual.arrival.title": "侵蝕者降臨",
+  "title.abyssal_corrupter.ritual.arrival.subtitle": "在封印內戰鬥，否則深淵會恢復它的冠冕。"
 }

@@ -26,4 +26,5 @@ public class ItemInit {
             BlockInit.ABYSSAL_SUMMONING_ALTAR,
             new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)
     );
+
 }

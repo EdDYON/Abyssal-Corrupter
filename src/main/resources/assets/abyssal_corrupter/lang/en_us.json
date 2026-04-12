@@ -31,5 +31,11 @@
   "message.abyssal_corrupter.altar.already_summoning": "The abyss is already opening...",
   "message.abyssal_corrupter.altar.cooldown": "The altar is still cooling.",
   "message.abyssal_corrupter.altar.boss_nearby": "Another Abyssal Corrupter is already nearby.",
-  "message.abyssal_corrupter.altar.needs_catalyst": "The altar demands an Echo Shard."
+  "message.abyssal_corrupter.altar.needs_catalyst": "The altar demands an Echo Shard.",
+  "title.abyssal_corrupter.ritual.opening.title": "ABYSSAL JUDGEMENT FIELD",
+  "title.abyssal_corrupter.ritual.opening.subtitle": "The altar brands this ground as a battlefield.",
+  "title.abyssal_corrupter.ritual.seal.title": "NO ESCAPE FROM THE DEPTHS",
+  "title.abyssal_corrupter.ritual.seal.subtitle": "The Corrupter cannot leave. The field will drag it back.",
+  "title.abyssal_corrupter.ritual.arrival.title": "THE CORRUPTER DESCENDS",
+  "title.abyssal_corrupter.ritual.arrival.subtitle": "Fight inside the seal, or watch the abyss restore its champion."
 }
