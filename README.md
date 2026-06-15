@@ -74,5 +74,3 @@
 - 打包进 jar 的代码/原创内容协议：`META-INF/LICENSE.txt`
 - 打包进 jar 的第三方模型协议：`META-INF/THIRD_PARTY_ASSET_NOTICES.txt`
 
-发布 jar 时请保留 `META-INF/LICENSE.txt` 和 `META-INF/THIRD_PARTY_ASSET_NOTICES.txt`。它们会随 `src/main/resources` 一起被 Gradle 打进最终 jar。
-
