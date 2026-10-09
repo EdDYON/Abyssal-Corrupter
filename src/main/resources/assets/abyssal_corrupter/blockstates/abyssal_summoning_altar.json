@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,powered=false": { "model": "abyssal_corrupter:block/abyssal_summoning_altar" },
+    "facing=east,powered=false": { "model": "abyssal_corrupter:block/abyssal_summoning_altar", "y": 90 },
+    "facing=south,powered=false": { "model": "abyssal_corrupter:block/abyssal_summoning_altar", "y": 180 },
+    "facing=west,powered=false": { "model": "abyssal_corrupter:block/abyssal_summoning_altar", "y": 270 },
+    "facing=north,powered=true": { "model": "abyssal_corrupter:block/abyssal_summoning_altar_active" },
+    "facing=east,powered=true": { "model": "abyssal_corrupter:block/abyssal_summoning_altar_active", "y": 90 },
+    "facing=south,powered=true": { "model": "abyssal_corrupter:block/abyssal_summoning_altar_active", "y": 180 },
+    "facing=west,powered=true": { "model": "abyssal_corrupter:block/abyssal_summoning_altar_active", "y": 270 }
+  }
+}
